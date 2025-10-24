@@ -7,6 +7,10 @@ license = "MIT"
 repository = "https://github.com/gellar/thypingscripts"
 edition = "2021"
 
+[[bin]]
+name = "thypingscripts"
+path = "src/main.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
