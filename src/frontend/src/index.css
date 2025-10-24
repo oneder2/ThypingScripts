@@ -2,6 +2,89 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fountain脚本预览样式 */
+.script-preview {
+  font-family: 'Courier New', monospace;
+  line-height: 1.6;
+  color: #333;
+}
+
+.script-preview .scene-heading {
+  font-weight: bold;
+  text-transform: uppercase;
+  margin: 2em 0 1em 0;
+  text-align: center;
+  font-size: 1.1em;
+}
+
+.script-preview .character {
+  font-weight: bold;
+  text-transform: uppercase;
+  margin: 1em 0 0 0;
+  text-align: center;
+  font-size: 1em;
+}
+
+.script-preview .dialogue {
+  margin: 0 0 0 2em;
+  text-align: left;
+  font-size: 0.95em;
+}
+
+.script-preview .action {
+  margin: 1em 0;
+  text-align: left;
+  font-size: 0.95em;
+}
+
+.script-preview .parenthetical {
+  margin: 0 0 0 3em;
+  text-align: left;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+.script-preview .transition {
+  font-weight: bold;
+  text-transform: uppercase;
+  margin: 2em 0 1em 0;
+  text-align: right;
+  font-size: 1em;
+}
+
+.script-preview .spacing {
+  height: 1em;
+}
+
+/* 暗色模式 */
+.dark .script-preview {
+  color: #e5e7eb;
+}
+
+.dark .script-preview .scene-heading {
+  color: #f3f4f6;
+}
+
+.dark .script-preview .character {
+  color: #d1d5db;
+}
+
+.dark .script-preview .dialogue {
+  color: #e5e7eb;
+}
+
+.dark .script-preview .action {
+  color: #d1d5db;
+}
+
+.dark .script-preview .parenthetical {
+  color: #9ca3af;
+}
+
+.dark .script-preview .transition {
+  color: #f3f4f6;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
