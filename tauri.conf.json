@@ -1,10 +1,9 @@
 {
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "cd src/frontend && npm run dev",
+    "beforeBuildCommand": "cd src/frontend && npm run build",
     "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": false
+    "distDir": "../src/frontend/dist"
   },
   "package": {
     "productName": "ThypingScripts",
