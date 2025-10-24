@@ -1,8 +1,112 @@
 pub mod autosave;
 pub mod recovery;
 
+use crate::TempFile;
 use std::path::PathBuf;
-use crate::{TempFile, TempFileManager};
+use std::fs;
+use std::io::{self, Write, Read};
+use chrono::Utc;
+use uuid::Uuid;
+use dirs;
+
+/// 临时文件管理器
+pub struct TempFileManager {
+    pub base_path: PathBuf,
+}
+
+impl TempFileManager {
+    pub fn new() -> Result<Self, io::Error> {
+        let base_path = Self::get_temp_dir()?;
+        if !base_path.exists() {
+            fs::create_dir_all(&base_path)?;
+        }
+        Ok(Self { base_path })
+    }
+
+    #[cfg(target_os = "windows")]
+    fn get_temp_dir() -> Result<PathBuf, io::Error> {
+        let mut path = dirs::temp_dir().ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Temp directory not found"))?;
+        path.push("thypingscripts");
+        Ok(path)
+    }
+
+    #[cfg(target_os = "macos")]
+    fn get_temp_dir() -> Result<PathBuf, io::Error> {
+        let mut path = dirs::cache_dir().ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Cache directory not found"))?;
+        path.push("thypingscripts");
+        Ok(path)
+    }
+
+    #[cfg(target_os = "linux")]
+    fn get_temp_dir() -> Result<PathBuf, io::Error> {
+        let mut path = dirs::cache_dir().ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Cache directory not found"))?;
+        path.push("thypingscripts");
+        Ok(path)
+    }
+
+    pub fn create_temp_file(&self, content: String, metadata: crate::TempFileMetadata) -> Result<crate::TempFile, io::Error> {
+        let id = Uuid::new_v4().to_string();
+        let file_path = self.base_path.join(format!("{}.tmp", id));
+        let mut file = fs::File::create(&file_path)?;
+        file.write_all(content.as_bytes())?;
+
+        let now = Utc::now();
+        Ok(crate::TempFile {
+            id,
+            path: file_path,
+            content,
+            created_at: now,
+            last_modified: now,
+            metadata,
+        })
+    }
+
+    pub fn update_temp_file(&self, id: &str, new_content: String) -> Result<crate::TempFile, io::Error> {
+        let file_path = self.base_path.join(format!("{}.tmp", id));
+        fs::write(&file_path, new_content.as_bytes())?;
+
+        let mut temp_file = self.load_temp_file(id)?;
+        temp_file.content = new_content;
+        temp_file.last_modified = Utc::now();
+        Ok(temp_file)
+    }
+
+    pub fn load_temp_file(&self, id: &str) -> Result<crate::TempFile, io::Error> {
+        let file_path = self.base_path.join(format!("{}.tmp", id));
+        let mut file = fs::File::open(&file_path)?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
+
+        // TODO: 从元数据文件读取实际元数据
+        let metadata = crate::TempFileMetadata {
+            title: "Untitled".to_string(),
+            author: "Unknown".to_string(),
+            version: "1.0".to_string(),
+            word_count: content.split_whitespace().count() as u32,
+            character_count: content.chars().count() as u32,
+            scene_count: 0,
+        };
+        let now = Utc::now();
+        Ok(crate::TempFile {
+            id: id.to_string(),
+            path: file_path,
+            content,
+            created_at: now, // Placeholder
+            last_modified: now,
+            metadata,
+        })
+    }
+
+    pub fn delete_temp_file(&self, id: &str) -> Result<(), io::Error> {
+        let file_path = self.base_path.join(format!("{}.tmp", id));
+        fs::remove_file(&file_path)
+    }
+
+    pub fn cleanup_old_files(&self) -> Result<usize, io::Error> {
+        // TODO: 实现清理逻辑
+        Ok(0)
+    }
+}
 
 /// 文件管理服务
 pub struct FileManager {
@@ -27,22 +131,22 @@ impl FileManager {
 
     /// 创建新文件
     pub fn create_file(&self, content: String, metadata: crate::TempFileMetadata) -> Result<TempFile, Box<dyn std::error::Error>> {
-        self.temp_file_manager.create_temp_file(content, metadata)
+        Ok(self.temp_file_manager.create_temp_file(content, metadata)?)
     }
 
     /// 保存文件
     pub fn save_file(&self, id: &str, content: String) -> Result<TempFile, Box<dyn std::error::Error>> {
-        self.temp_file_manager.update_temp_file(id, content)
+        Ok(self.temp_file_manager.update_temp_file(id, content)?)
     }
 
     /// 加载文件
     pub fn load_file(&self, id: &str) -> Result<TempFile, Box<dyn std::error::Error>> {
-        self.temp_file_manager.load_temp_file(id)
+        Ok(self.temp_file_manager.load_temp_file(id)?)
     }
 
     /// 删除文件
     pub fn delete_file(&self, id: &str) -> Result<(), Box<dyn std::error::Error>> {
-        self.temp_file_manager.delete_temp_file(id)
+        Ok(self.temp_file_manager.delete_temp_file(id)?)
     }
 
     /// 检查崩溃恢复
@@ -62,6 +166,6 @@ impl FileManager {
 
     /// 清理过期文件
     pub fn cleanup_old_files(&self) -> Result<usize, Box<dyn std::error::Error>> {
-        self.temp_file_manager.cleanup_old_files()
+        Ok(self.temp_file_manager.cleanup_old_files()?)
     }
 }

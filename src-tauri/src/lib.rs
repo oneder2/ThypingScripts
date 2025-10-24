@@ -5,7 +5,6 @@ pub mod pdf;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use chrono::{DateTime, Utc};
-use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TempFileMetadata {
@@ -39,3 +38,6 @@ pub enum CleanupPolicy {
     AfterDuration(u64), // Duration in seconds
     Manual,
 }
+
+// 重新导出TempFileManager
+pub use file::{TempFileManager, FileManager};

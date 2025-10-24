@@ -10,7 +10,7 @@ impl FountainParser {
         Self {}
     }
 
-    pub fn parse(&self, content: &str) -> Result<Vec<String>, String> {
+    pub fn parse(&self, _content: &str) -> Result<Vec<String>, String> {
         // TODO: 实现Fountain解析逻辑
         Ok(vec!["解析成功".to_string()])
     }

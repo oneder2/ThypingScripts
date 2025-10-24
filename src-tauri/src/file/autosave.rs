@@ -28,7 +28,7 @@ impl AutosaveService {
         temp_file: TempFile,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut interval_timer = interval(self.interval);
-        let mut temp_file = temp_file;
+        let temp_file = temp_file;
         let mut last_content = temp_file.content.clone();
 
         loop {
@@ -126,7 +126,7 @@ impl AutosaveService {
         id: &str,
     ) -> Result<TempFile, Box<dyn std::error::Error + Send + Sync>> {
         let autosave_path = temp_file_manager.base_path.join(format!("autosave_{}.auto", id));
-        let content = tokio::fs::read_to_string(autosave_path).await?;
+        let content: String = tokio::fs::read_to_string(autosave_path).await?;
         let temp_file: TempFile = serde_json::from_str(&content)?;
         Ok(temp_file)
     }
