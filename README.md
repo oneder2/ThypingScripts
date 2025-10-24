@@ -44,21 +44,27 @@ ThypingScripts旨在解决现有编剧软件过于复杂和昂贵的问题，提
 
 ```
 ThypingScripts/
-├── src/
-│   ├── frontend/          # React前端应用
-│   │   ├── src/
-│   │   │   ├── components/    # React组件
-│   │   │   ├── hooks/         # 自定义Hooks
-│   │   │   ├── stores/        # Zustand状态管理
-│   │   │   ├── types/         # TypeScript类型定义
-│   │   │   └── utils/         # 工具函数
-│   │   └── package.json
-│   └── backend/           # Rust后端应用
-│       ├── src/
-│       │   ├── file/          # 文件管理模块
-│       │   ├── fountain/      # Fountain解析模块
-│       │   └── pdf/           # PDF生成模块
-│       └── Cargo.toml
+├── src-react/            # React前端应用
+│   ├── src/
+│   │   ├── components/      # React组件
+│   │   ├── hooks/           # 自定义Hooks
+│   │   ├── stores/          # Zustand状态管理
+│   │   ├── types/           # TypeScript类型定义
+│   │   └── utils/           # 工具函数
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tailwind.config.js
+│   └── tsconfig.json
+├── src-tauri/            # Rust后端应用 (Tauri标准结构)
+│   ├── src/
+│   │   ├── main.rs           # 应用入口
+│   │   ├── lib.rs            # 库文件
+│   │   ├── file/             # 文件管理模块
+│   │   ├── fountain/          # Fountain解析模块
+│   │   └── pdf/              # PDF生成模块
+│   ├── Cargo.toml
+│   ├── build.rs
+│   └── tauri.conf.json
 ├── docs/                 # 项目文档
 ├── .github/workflows/    # CI/CD配置
 ├── package.json          # 根项目配置
@@ -114,7 +120,7 @@ npm run preview                # 预览前端构建结果
 
 # 后端开发
 npm run install:backend        # 安装Rust依赖
-cd src/backend && cargo build  # 构建Rust后端
+cd src-tauri && cargo build    # 构建Rust后端
 
 # 完整应用
 npm run tauri:dev              # 开发模式运行
@@ -288,7 +294,7 @@ npm run install:backend
 #### 2. 前端开发服务器问题
 ```bash
 # 清理缓存并重新安装
-cd src/frontend
+cd src-react
 rm -rf node_modules package-lock.json
 npm install
 
@@ -303,14 +309,14 @@ netstat -ano | findstr :1420  # Windows
 rustup update
 
 # 清理构建缓存
-cd src/backend
+cd src-tauri
 cargo clean
 cargo build
 ```
 
 #### 4. Tauri配置问题
 - 检查 `tauri.conf.json` 配置是否正确
-- 确保 `src/frontend/dist` 目录存在
+- 确保 `src-react/dist` 目录存在
 - 验证图标文件路径
 
 ### 开发调试

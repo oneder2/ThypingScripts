@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "identifier": "com.thypingscripts.app",
   "build": {
-    "beforeDevCommand": "cd ../src/frontend && npm run dev",
-    "beforeBuildCommand": "cd ../src/frontend && npm run build",
+    "beforeDevCommand": "cd ../src-react && npm run dev",
+    "beforeBuildCommand": "cd ../src-react && npm run build",
     "devUrl": "http://localhost:1420",
-    "frontendDist": "../src/frontend/dist"
+    "frontendDist": "../src-react/dist"
   },
   "app": {
     "windows": [

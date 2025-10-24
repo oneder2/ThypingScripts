@@ -4,14 +4,14 @@
   "description": "一个基于Tauri 2.0的跨平台桌面编剧工具，专注于简化的写作体验，支持Fountain格式",
   "type": "module",
   "scripts": {
-    "dev": "cd src/frontend && npm run dev",
-    "build": "cd src/frontend && npm run build",
-    "preview": "cd src/frontend && npm run preview",
+    "dev": "cd src-react && npm run dev",
+    "build": "cd src-react && npm run build",
+    "preview": "cd src-react && npm run preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "install:frontend": "cd src/frontend && npm install",
-    "install:backend": "cd src/backend && cargo build"
+    "install:frontend": "cd src-react && npm install",
+    "install:backend": "cd src-tauri && cargo build"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0"
