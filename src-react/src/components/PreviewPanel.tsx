@@ -1,50 +1,91 @@
 import { useMemo } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
+import '@/styles/fountain.css';
 
 const PreviewPanel = () => {
   const { editor, ui } = useAppStore();
 
-  // Fountain到HTML转换
+  // Fountain到HTML转换 - 根据官方规范改进
   const convertFountainToHTML = (content: string) => {
     const lines = content.split('\n');
     let html = '<div class="script-preview">';
     let inDialogue = false;
     let currentCharacter = '';
+    let inTitlePage = false;
 
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
-      
-      // 场景标题
-      if (trimmedLine.match(/^[A-Z][A-Z\s]+$/) && !trimmedLine.includes(':')) {
-        html += `<div class="scene-heading">${trimmedLine}</div>`;
+      const originalLine = line;
+
+      // 空行
+      if (!trimmedLine) {
+        html += '<div class="spacing"></div>';
+        return;
+      }
+
+      // 标题页信息
+      if (trimmedLine.includes(':') && !inDialogue) {
+        const [key, value] = trimmedLine.split(':', 2);
+        if (['Title', 'Credit', 'Author', 'Draft date', 'Contact'].includes(key.trim())) {
+          html += `<div class="title-page"><strong>${key.trim()}:</strong> ${value.trim()}</div>`;
+          return;
+        }
+      }
+
+      // 强制元素标记
+      if (trimmedLine.startsWith('.')) {
+        // 强制场景标题
+        html += `<div class="scene-heading">${trimmedLine.substring(1)}</div>`;
         inDialogue = false;
       }
-      // 角色名
-      else if (trimmedLine.match(/^[A-Z][A-Z\s]+$/) && trimmedLine.includes(':')) {
-        currentCharacter = trimmedLine.replace(':', '');
+      else if (trimmedLine.startsWith('@')) {
+        // 强制动作
+        html += `<div class="action">${trimmedLine.substring(1)}</div>`;
+        inDialogue = false;
+      }
+      else if (trimmedLine.startsWith('#')) {
+        // 强制角色名
+        currentCharacter = trimmedLine.substring(1);
         html += `<div class="character">${currentCharacter}</div>`;
         inDialogue = true;
       }
-      // 对话
-      else if (inDialogue && trimmedLine && !trimmedLine.startsWith('(')) {
-        html += `<div class="dialogue">${trimmedLine}</div>`;
-      }
-      // 动作描述
-      else if (trimmedLine && !trimmedLine.startsWith('(') && !inDialogue) {
-        html += `<div class="action">${trimmedLine}</div>`;
+      // 场景标题 (Scene Heading) - 改进识别规则
+      else if (trimmedLine.match(/^(INT\.|EXT\.|I\.|E\.|INT|EXT)\s+[A-Z\s]+/i)) {
+        html += `<div class="scene-heading">${trimmedLine.toUpperCase()}</div>`;
         inDialogue = false;
       }
-      // 括号内容（旁白）
+      // 角色名 (Character) - 改进识别规则
+      else if (trimmedLine.match(/^[A-Z][A-Z\s\.]+$/) && 
+               !trimmedLine.match(/^(INT\.|EXT\.|I\.|E\.|INT|EXT)/i) &&
+               !trimmedLine.endsWith(':') &&
+               trimmedLine.length > 1) {
+        currentCharacter = trimmedLine;
+        html += `<div class="character">${trimmedLine}</div>`;
+        inDialogue = true;
+      }
+      // 对话 (Dialogue) - 改进识别规则
+      else if (inDialogue && currentCharacter && !trimmedLine.startsWith('(') && !trimmedLine.startsWith('[')) {
+        html += `<div class="dialogue">${trimmedLine}</div>`;
+      }
+      // 括号台词 (Parenthetical) - 改进识别规则
       else if (trimmedLine.startsWith('(') && trimmedLine.endsWith(')')) {
         html += `<div class="parenthetical">${trimmedLine}</div>`;
       }
-      // 过渡
-      else if (trimmedLine.match(/^(FADE IN|FADE OUT|CUT TO|DISSOLVE TO)/i)) {
+      // 过渡 (Transition) - 改进识别规则
+      else if (trimmedLine.startsWith('>') || 
+               trimmedLine.match(/^(FADE IN|FADE OUT|CUT TO|DISSOLVE TO|SMASH CUT|MATCH CUT|JUMP CUT|FADE TO BLACK|FADE TO WHITE):?$/i)) {
         html += `<div class="transition">${trimmedLine}</div>`;
+        inDialogue = false;
       }
-      // 空行
-      else if (!trimmedLine) {
-        html += '<div class="spacing"></div>';
+      // 注释 (Notes) - 导出时忽略
+      else if (trimmedLine.startsWith('[[') && trimmedLine.endsWith(']]')) {
+        // 注释在预览中不显示
+        return;
+      }
+      // 动作/描述 (Action) - 默认情况
+      else if (trimmedLine) {
+        html += `<div class="action">${trimmedLine}</div>`;
+        inDialogue = false;
       }
     });
 
@@ -68,16 +109,11 @@ const PreviewPanel = () => {
       </div>
 
       {/* 预览内容 */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
         {editor.content ? (
           <div
-            className="script-preview max-w-4xl mx-auto"
+            className="script-preview w-full"
             dangerouslySetInnerHTML={{ __html: htmlContent }}
-            style={{
-              fontFamily: 'Georgia, serif',
-              lineHeight: '1.6',
-              color: ui.theme === 'dark' ? '#e5e7eb' : '#374151',
-            }}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">

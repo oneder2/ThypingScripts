@@ -33,6 +33,7 @@ export interface UIState {
   fontSize: number;
   showLineNumbers: boolean;
   wordWrap: boolean;
+  editorMode: 'fountain' | 'split';
 }
 
 // 文件状态类型

@@ -1,0 +1,215 @@
+/* Fountain语法高亮样式 */
+
+.fountain-editor {
+  font-family: 'Courier New', monospace;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* 场景标题 */
+.fountain-scene {
+  color: #1f2937;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 1.5em 0 0.5em 0;
+  padding-left: 0;
+}
+
+/* 角色名 */
+.fountain-character {
+  color: #7c2d12;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin: 1em 0 0.25em 0;
+  padding-left: 2em;
+}
+
+/* 对话 */
+.fountain-dialogue {
+  color: #374151;
+  margin: 0 0 0.5em 0;
+  padding-left: 2em;
+  padding-right: 2em;
+  max-width: 65%;
+}
+
+/* 动作描述 */
+.fountain-action {
+  color: #4b5563;
+  margin: 0.5em 0;
+  padding-left: 0;
+}
+
+/* 过渡 */
+.fountain-transition {
+  color: #dc2626;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: right;
+  margin: 1em 0;
+  padding-right: 0;
+}
+
+/* 括号内容（旁白） */
+.fountain-parenthetical {
+  color: #6b7280;
+  font-style: italic;
+  margin: 0.25em 0;
+  padding-left: 3em;
+  padding-right: 3em;
+  max-width: 50%;
+}
+
+/* 普通文本 */
+.fountain-normal {
+  color: #6b7280;
+}
+
+/* 暗色主题 */
+.dark .fountain-scene {
+  color: #f3f4f6;
+}
+
+.dark .fountain-character {
+  color: #fca5a5;
+}
+
+.dark .fountain-dialogue {
+  color: #d1d5db;
+}
+
+.dark .fountain-action {
+  color: #9ca3af;
+}
+
+.dark .fountain-transition {
+  color: #f87171;
+}
+
+.dark .fountain-parenthetical {
+  color: #9ca3af;
+}
+
+.dark .fountain-normal {
+  color: #9ca3af;
+}
+
+/* 预览样式 */
+.script-preview {
+  font-family: 'Times New Roman', serif;
+  line-height: 1.6;
+  color: #374151;
+  max-width: 100%;
+  margin: 0;
+  padding: 1rem;
+  background: white;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: left;
+}
+
+/* 标题页样式 */
+.script-preview .title-page {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 0.9em;
+  color: #6b7280;
+}
+
+.script-preview .scene-heading {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 1.5em 0 0.5em 0;
+  color: #1f2937;
+}
+
+.script-preview .character {
+  font-weight: bold;
+  text-transform: uppercase;
+  margin: 1em 0 0.25em 0;
+  padding-left: 2em;
+  color: #7c2d12;
+}
+
+.script-preview .dialogue {
+  margin: 0 0 0.5em 0;
+  padding-left: 2em;
+  padding-right: 2em;
+  max-width: 65%;
+  color: #374151;
+}
+
+.script-preview .action {
+  margin: 0.5em 0;
+  color: #4b5563;
+}
+
+.script-preview .transition {
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: right;
+  margin: 1em 0;
+  color: #dc2626;
+}
+
+.script-preview .parenthetical {
+  font-style: italic;
+  margin: 0.25em 0;
+  padding-left: 3em;
+  padding-right: 3em;
+  max-width: 50%;
+  color: #6b7280;
+}
+
+.script-preview .spacing {
+  height: 0.5em;
+}
+
+/* 暗色模式预览样式 */
+.dark .script-preview {
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+.dark .script-preview .scene-heading {
+  color: #f3f4f6;
+}
+
+.dark .script-preview .character {
+  color: #fca5a5;
+}
+
+.dark .script-preview .dialogue {
+  color: #d1d5db;
+}
+
+.dark .script-preview .action {
+  color: #9ca3af;
+}
+
+.dark .script-preview .transition {
+  color: #f87171;
+}
+
+.dark .script-preview .parenthetical {
+  color: #9ca3af;
+}
+
+/* 打印样式 */
+@media print {
+  .script-preview {
+    max-width: none;
+    margin: 0;
+    padding: 0.5in;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+  
+  .script-preview .scene-heading {
+    page-break-before: auto;
+  }
+}
+

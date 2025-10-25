@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { tauriApi } from '@/utils/tauriApi';
 
 // 组件导入
 import Toolbar from '@/components/Toolbar';
 import NavigationPanel from '@/components/NavigationPanel';
-import ScriptEditor from '@/components/ScriptEditor';
+import SimpleEditor from '@/components/SimpleEditor';
+import SimpleFountainEditor from '@/components/SimpleFountainEditor';
 import PreviewPanel from '@/components/PreviewPanel';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -15,6 +17,9 @@ function App() {
   
   // 启用自动保存
   useAutoSave();
+  
+  // 启用快捷键
+  useKeyboardShortcuts();
 
   // 应用启动时检查崩溃恢复
   useEffect(() => {
@@ -42,30 +47,40 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className={`h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors`}>
-        {/* 工具栏 */}
+      <div className={`h-screen w-full flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors`}>
+        {/* 顶部导航栏 */}
         <Toolbar />
         
-        {/* 主内容区域 */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* 导航面板 */}
+        {/* 主内容区域 - 3:9分栏布局 */}
+        <div className="flex-1 flex overflow-hidden w-full">
+          {/* 左侧导航面板 - 3/12 = 25% */}
           {ui.sidebarOpen && (
-            <NavigationPanel />
+            <div className="w-1/4 min-w-0 flex-shrink-0">
+              <NavigationPanel />
+            </div>
           )}
           
-          {/* 编辑器区域 */}
-          <div className="flex-1 flex">
-            {/* 编辑器 */}
-            {(ui.previewMode === 'split' || ui.previewMode === 'editor') && (
-              <div className={`${ui.previewMode === 'split' ? 'w-1/2' : 'w-full'} flex flex-col`}>
-                <ScriptEditor />
+          {/* 右侧编辑器区域 - 9/12 = 75% */}
+          <div className={`${ui.sidebarOpen ? 'w-3/4' : 'w-full'} flex flex-col min-w-0`}>
+            {/* Fountain直接编辑模式 */}
+            {ui.editorMode === 'fountain' && (
+              <div className="w-full flex flex-col h-full">
+                <SimpleFountainEditor />
               </div>
             )}
             
-            {/* 预览面板 */}
-            {(ui.previewMode === 'split' || ui.previewMode === 'preview') && (
-              <div className={`${ui.previewMode === 'split' ? 'w-1/2' : 'w-full'} flex flex-col border-l border-gray-200 dark:border-gray-700`}>
-                <PreviewPanel />
+            {/* 分屏编辑模式 */}
+            {ui.editorMode === 'split' && (
+              <div className="w-full flex h-full">
+                {/* 源码编辑器 */}
+                <div className="w-1/2 flex flex-col h-full border-r border-gray-200 dark:border-gray-700">
+                  <SimpleEditor />
+                </div>
+                
+                {/* 预览面板 */}
+                <div className="w-1/2 flex flex-col h-full">
+                  <PreviewPanel />
+                </div>
               </div>
             )}
           </div>

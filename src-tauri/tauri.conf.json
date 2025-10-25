@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "identifier": "com.thypingscripts.app",
   "build": {
-    "beforeDevCommand": "cd /home/gellar/Desktop/program/ThypingScripts/src-react && npm run dev",
-    "beforeBuildCommand": "cd /home/gellar/Desktop/program/ThypingScripts/src-react && npm run build",
+    "beforeDevCommand": "cd src-react && npm run dev",
+    "beforeBuildCommand": "cd src-react && npm run build",
     "devUrl": "http://localhost:1420",
     "frontendDist": "../src-react/dist"
   },
