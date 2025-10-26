@@ -1,9 +1,9 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, forwardRef } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 
-const SimpleEditor = () => {
+const SimpleEditor = forwardRef<HTMLTextAreaElement>((props, ref) => {
   const { editor, ui, updateContent, setCursorPosition, setSelection, undo, redo } = useAppStore();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = ref || useRef<HTMLTextAreaElement>(null);
 
   // 处理内容变化 - 原子性操作
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -124,5 +124,9 @@ FADE OUT."
     </div>
   );
 };
+
+});
+
+SimpleEditor.displayName = 'SimpleEditor';
 
 export default SimpleEditor;

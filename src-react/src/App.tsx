@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useScrollSync } from '@/hooks/useScrollSync';
 import { tauriApi } from '@/utils/tauriApi';
 
 // 组件导入
@@ -9,17 +10,27 @@ import Toolbar from '@/components/Toolbar';
 import NavigationPanel from '@/components/NavigationPanel';
 import SimpleEditor from '@/components/SimpleEditor';
 import SimpleFountainEditor from '@/components/SimpleFountainEditor';
+import DirectEditor from '@/components/DirectEditor';
 import PreviewPanel from '@/components/PreviewPanel';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 function App() {
   const { ui, setError, setRecoveryFiles } = useAppStore();
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   
   // 启用自动保存
   useAutoSave();
   
   // 启用快捷键
   useKeyboardShortcuts();
+  
+  // 启用滚动同步（仅在分屏模式下）
+  useScrollSync({
+    sourceRef: editorRef,
+    targetRef: previewRef,
+    enabled: ui.editorMode === 'split'
+  });
 
   // 应用启动时检查崩溃恢复
   useEffect(() => {
@@ -65,7 +76,7 @@ function App() {
             {/* Fountain直接编辑模式 */}
             {ui.editorMode === 'fountain' && (
               <div className="w-full flex flex-col h-full">
-                <SimpleFountainEditor />
+                <DirectEditor />
               </div>
             )}
             
@@ -74,12 +85,12 @@ function App() {
               <div className="w-full flex h-full">
                 {/* 源码编辑器 */}
                 <div className="w-1/2 flex flex-col h-full border-r border-gray-200 dark:border-gray-700">
-                  <SimpleEditor />
+                  <SimpleEditor ref={editorRef} />
                 </div>
                 
                 {/* 预览面板 */}
                 <div className="w-1/2 flex flex-col h-full">
-                  <PreviewPanel />
+                  <PreviewPanel ref={previewRef} />
                 </div>
               </div>
             )}

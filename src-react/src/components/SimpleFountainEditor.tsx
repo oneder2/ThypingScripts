@@ -47,12 +47,7 @@ const SimpleFountainEditor = () => {
       redo();
     }
 
-    // 智能补全触发
-    if (e.key === ' ' || e.key === 'Enter' || e.key === 'Tab') {
-      setTimeout(() => {
-        checkForCompletion();
-      }, 100);
-    }
+    // 移除自动补全触发
   };
 
   // 自动调整高度 - 持久性保证
@@ -352,24 +347,7 @@ FADE OUT."
           }}
         />
         
-        {/* 智能补全组件 */}
-        {showCompletion && (
-          <div
-            className="absolute z-50"
-            style={{
-              top: `${completionPosition.top}px`,
-              left: `${completionPosition.left}px`,
-            }}
-          >
-            <SmartCompletion
-              content={editor.content}
-              cursorPosition={editor.cursorPosition}
-              onSelect={handleCompletionSelect}
-              onClose={() => setShowCompletion(false)}
-              isVisible={showCompletion}
-            />
-          </div>
-        )}
+        {/* 移除智能补全组件 */}
       </div>
 
       {/* 状态栏 */}

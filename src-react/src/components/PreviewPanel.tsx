@@ -1,8 +1,25 @@
-import { useMemo } from 'react';
+import { useMemo, forwardRef } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import '@/styles/fountain.css';
 
-const PreviewPanel = () => {
+// Fountain格式处理函数
+const formatFountainText = (text: string): string => {
+  return text
+    // 处理加粗 **text**
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    // 处理斜体 *text*
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    // 处理下划线 _text_
+    .replace(/_([^_]+)_/g, '<u>$1</u>')
+    // 处理删除线 ~~text~~
+    .replace(/~~(.*?)~~/g, '<del>$1</del>')
+    // 处理上标 ^text^
+    .replace(/\^([^^]+)\^/g, '<sup>$1</sup>')
+    // 处理下标 ~text~
+    .replace(/~([^~]+)~/g, '<sub>$1</sub>');
+};
+
+const PreviewPanel = forwardRef<HTMLDivElement>((props, ref) => {
   const { editor, ui } = useAppStore();
 
   // Fountain到HTML转换 - 根据官方规范改进
@@ -65,7 +82,7 @@ const PreviewPanel = () => {
       }
       // 对话 (Dialogue) - 改进识别规则
       else if (inDialogue && currentCharacter && !trimmedLine.startsWith('(') && !trimmedLine.startsWith('[')) {
-        html += `<div class="dialogue">${trimmedLine}</div>`;
+        html += `<div class="dialogue">${formatFountainText(trimmedLine)}</div>`;
       }
       // 括号台词 (Parenthetical) - 改进识别规则
       else if (trimmedLine.startsWith('(') && trimmedLine.endsWith(')')) {
@@ -84,7 +101,7 @@ const PreviewPanel = () => {
       }
       // 动作/描述 (Action) - 默认情况
       else if (trimmedLine) {
-        html += `<div class="action">${trimmedLine}</div>`;
+        html += `<div class="action">${formatFountainText(trimmedLine)}</div>`;
         inDialogue = false;
       }
     });
@@ -109,7 +126,7 @@ const PreviewPanel = () => {
       </div>
 
       {/* 预览内容 */}
-      <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+      <div ref={ref} className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
         {editor.content ? (
           <div
             className="script-preview w-full"
@@ -129,5 +146,9 @@ const PreviewPanel = () => {
     </div>
   );
 };
+
+});
+
+PreviewPanel.displayName = 'PreviewPanel';
 
 export default PreviewPanel;

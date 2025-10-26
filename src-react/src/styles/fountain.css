@@ -174,6 +174,110 @@
   color: #e5e7eb;
 }
 
+/* 直接编辑模式样式 */
+.fountain-element {
+  margin: 0.5em 0;
+  padding: 0.25em 0;
+  transition: all 0.2s ease;
+}
+
+.fountain-element:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .fountain-element:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.fountain-element.selected {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0.5em;
+}
+
+.dark .fountain-element.selected {
+  background-color: #374151;
+  border-color: #6b7280;
+}
+
+/* 直接编辑模式元素样式 */
+.fountain-element.scene-heading {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 1em 0 0.5em 0;
+  color: #1f2937;
+}
+
+.dark .fountain-element.scene-heading {
+  color: #f3f4f6;
+}
+
+.fountain-element.character {
+  text-align: center;
+  font-weight: bold;
+  margin: 1em 0 0.25em 0;
+  padding-left: 3em;
+  padding-right: 3em;
+  color: #7c2d12;
+}
+
+.dark .fountain-element.character {
+  color: #fca5a5;
+}
+
+.fountain-element.dialogue {
+  text-align: left;
+  margin: 0.25em 0;
+  padding-left: 3em;
+  padding-right: 3em;
+  max-width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.fountain-element.action {
+  text-align: left;
+  margin: 0.5em 0;
+}
+
+.fountain-element.parenthetical {
+  text-align: center;
+  margin: 0.25em 0;
+  padding-left: 4em;
+  padding-right: 4em;
+  max-width: 40%;
+  margin-left: auto;
+  margin-right: auto;
+  color: #6b7280;
+}
+
+.dark .fountain-element.parenthetical {
+  color: #9ca3af;
+}
+
+.fountain-element.transition {
+  text-align: right;
+  margin: 1em 0;
+  font-weight: bold;
+  color: #ef4444;
+}
+
+.dark .fountain-element.transition {
+  color: #f87171;
+}
+
+.fountain-element.title-page {
+  text-align: center;
+  margin: 0.5em 0;
+  color: #6b7280;
+}
+
+.dark .fountain-element.title-page {
+  color: #9ca3af;
+}
+
 .dark .script-preview .scene-heading {
   color: #f3f4f6;
 }
