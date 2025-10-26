@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 
 interface UseScrollSyncProps {
-  sourceRef: React.RefObject<HTMLElement>;
-  targetRef: React.RefObject<HTMLElement>;
+  sourceRef: React.RefObject<HTMLElement> | React.RefObject<HTMLTextAreaElement>;
+  targetRef: React.RefObject<HTMLElement> | React.RefObject<HTMLDivElement>;
   enabled?: boolean;
 }
 
@@ -12,8 +12,8 @@ export const useScrollSync = ({ sourceRef, targetRef, enabled = true }: UseScrol
   useEffect(() => {
     if (!enabled || !sourceRef.current || !targetRef.current) return;
 
-    const sourceElement = sourceRef.current;
-    const targetElement = targetRef.current;
+    const sourceElement = sourceRef.current as HTMLElement;
+    const targetElement = targetRef.current as HTMLElement;
 
     const handleSourceScroll = () => {
       if (isScrolling.current) return;

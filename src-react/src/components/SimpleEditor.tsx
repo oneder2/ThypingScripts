@@ -1,4 +1,4 @@
-import { useRef, useEffect, forwardRef } from 'react';
+import { useRef, forwardRef } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 
 const SimpleEditor = forwardRef<HTMLTextAreaElement>((_props, ref) => {
@@ -10,6 +10,15 @@ const SimpleEditor = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     updateContent(newContent);
+    
+    // 保持光标位置
+    setTimeout(() => {
+      const element = typeof textareaRef === 'function' ? null : textareaRef.current;
+      if (element) {
+        const cursorPos = element.selectionStart;
+        element.setSelectionRange(cursorPos, cursorPos);
+      }
+    }, 0);
   };
 
   // 处理光标位置变化 - 一致性保证
@@ -47,22 +56,7 @@ const SimpleEditor = forwardRef<HTMLTextAreaElement>((_props, ref) => {
     }
   };
 
-  // 自动调整高度 - 持久性保证
-  useEffect(() => {
-    const element = typeof textareaRef === 'function' ? null : textareaRef.current;
-    if (element) {
-      element.style.height = 'auto';
-      element.style.height = element.scrollHeight + 'px';
-    }
-  }, [editor.content]);
-
-  // 确保光标位置正确
-  useEffect(() => {
-    const element = typeof textareaRef === 'function' ? null : textareaRef.current;
-    if (element) {
-      element.focus();
-    }
-  }, []);
+  // 移除自动调整高度和自动聚焦，避免干扰光标位置
 
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 h-full">
@@ -78,7 +72,7 @@ const SimpleEditor = forwardRef<HTMLTextAreaElement>((_props, ref) => {
       </div>
 
       {/* 编辑器内容 - 简单的textarea，无语法高亮 */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative">
         <textarea
           ref={textareaRef}
           value={editor.content}

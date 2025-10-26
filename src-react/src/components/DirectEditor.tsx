@@ -176,6 +176,9 @@ const DirectEditor = () => {
     lines[elements[index].lineNumber] = newContent;
     const newContentToUpdate = lines.join('\n');
     updateContent(newContentToUpdate);
+    
+    // 保持元素选择状态
+    setSelectedElement(index);
   };
 
   // 处理键盘事件
@@ -204,6 +207,10 @@ const DirectEditor = () => {
         contentEditable
         suppressContentEditableWarning
         onInput={(e) => {
+          const newContent = e.currentTarget.textContent || '';
+          handleElementChange(index, newContent);
+        }}
+        onBlur={(e) => {
           const newContent = e.currentTarget.textContent || '';
           handleElementChange(index, newContent);
         }}
