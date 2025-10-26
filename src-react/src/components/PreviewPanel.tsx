@@ -19,8 +19,8 @@ const formatFountainText = (text: string): string => {
     .replace(/~([^~]+)~/g, '<sub>$1</sub>');
 };
 
-const PreviewPanel = forwardRef<HTMLDivElement>((props, ref) => {
-  const { editor, ui } = useAppStore();
+const PreviewPanel = forwardRef<HTMLDivElement>((_props, ref) => {
+  const { editor } = useAppStore();
 
   // Fountain到HTML转换 - 根据官方规范改进
   const convertFountainToHTML = (content: string) => {
@@ -28,11 +28,9 @@ const PreviewPanel = forwardRef<HTMLDivElement>((props, ref) => {
     let html = '<div class="script-preview">';
     let inDialogue = false;
     let currentCharacter = '';
-    let inTitlePage = false;
 
-    lines.forEach((line, index) => {
+    lines.forEach((line) => {
       const trimmedLine = line.trim();
-      const originalLine = line;
 
       // 空行
       if (!trimmedLine) {
@@ -145,8 +143,6 @@ const PreviewPanel = forwardRef<HTMLDivElement>((props, ref) => {
       </div>
     </div>
   );
-};
-
 });
 
 PreviewPanel.displayName = 'PreviewPanel';

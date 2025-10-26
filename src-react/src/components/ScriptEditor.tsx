@@ -4,7 +4,7 @@ import { FountainHighlighter, HighlightedLine } from '@/utils/fountainHighlighte
 import '@/styles/fountain.css';
 
 const ScriptEditor = () => {
-  const { editor, ui, updateContent, setCursorPosition, setSelection, undo, redo, saveToHistory } = useAppStore();
+  const { editor, ui, updateContent, setCursorPosition, setSelection, undo, redo } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [highlightedLines, setHighlightedLines] = useState<HighlightedLine[]>([]);
 

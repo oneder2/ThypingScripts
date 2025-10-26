@@ -1,12 +1,9 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
-import SmartCompletion from './SmartCompletion';
 
 const SimpleFountainEditor = () => {
   const { editor, ui, updateContent, setCursorPosition, setSelection, undo, redo } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [showCompletion, setShowCompletion] = useState(false);
-  const [completionPosition, setCompletionPosition] = useState({ top: 0, left: 0 });
 
   // 处理内容变化 - 原子性操作
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -65,56 +62,7 @@ const SimpleFountainEditor = () => {
     }
   }, []);
 
-  // 检查是否需要显示智能补全
-  const checkForCompletion = () => {
-    if (!textareaRef.current) return;
-
-    const cursorPos = textareaRef.current.selectionStart;
-    const currentLine = editor.content.substring(0, cursorPos).split('\n').pop() || '';
-    
-    // 检查是否在需要补全的位置
-    if (currentLine.match(/^(INT\.|EXT\.|I\.|E\.|INT|EXT)\s*$/i) ||
-        currentLine.trim() === '' ||
-        currentLine.match(/^[A-Z\s]*$/i) ||
-        currentLine.startsWith('>')) {
-      
-      // 计算补全框位置
-      const textarea = textareaRef.current;
-      const rect = textarea.getBoundingClientRect();
-      const scrollTop = textarea.scrollTop;
-      const lineHeight = 20; // 估算行高
-      const lines = editor.content.substring(0, cursorPos).split('\n').length;
-      
-      setCompletionPosition({
-        top: rect.top + (lines * lineHeight) - scrollTop + 25,
-        left: rect.left + 10
-      });
-      
-      setShowCompletion(true);
-    } else {
-      setShowCompletion(false);
-    }
-  };
-
-  // 处理智能补全选择
-  const handleCompletionSelect = (text: string) => {
-    if (textareaRef.current) {
-      const start = textareaRef.current.selectionStart;
-      const end = textareaRef.current.selectionEnd;
-      const newContent = editor.content.substring(0, start) + text + editor.content.substring(end);
-      updateContent(newContent);
-      
-      // 设置光标位置
-      setTimeout(() => {
-        if (textareaRef.current) {
-          const newCursorPos = start + text.length;
-          textareaRef.current.focus();
-          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
-        }
-      }, 0);
-    }
-    setShowCompletion(false);
-  };
+  // 移除智能补全相关函数
 
   // 插入Fountain格式内容的辅助函数
   const insertFountainElement = (element: string) => {

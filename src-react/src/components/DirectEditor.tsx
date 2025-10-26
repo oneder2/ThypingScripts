@@ -29,11 +29,10 @@ interface FountainElement {
 }
 
 const DirectEditor = () => {
-  const { editor, ui, updateContent, setCursorPosition } = useAppStore();
+  const { editor, ui, updateContent } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
   const [elements, setElements] = useState<FountainElement[]>([]);
   const [selectedElement, setSelectedElement] = useState<number | null>(null);
-  const [isComposing, setIsComposing] = useState(false);
 
   // 解析Fountain内容为元素
   const parseFountainContent = useCallback((content: string): FountainElement[] => {
@@ -175,8 +174,8 @@ const DirectEditor = () => {
   const handleElementChange = (index: number, newContent: string) => {
     const lines = editor.content.split('\n');
     lines[elements[index].lineNumber] = newContent;
-    const newContent = lines.join('\n');
-    updateContent(newContent);
+    const newContentToUpdate = lines.join('\n');
+    updateContent(newContentToUpdate);
   };
 
   // 处理键盘事件
@@ -208,8 +207,8 @@ const DirectEditor = () => {
           const newContent = e.currentTarget.textContent || '';
           handleElementChange(index, newContent);
         }}
-        onCompositionStart={() => setIsComposing(true)}
-        onCompositionEnd={() => setIsComposing(false)}
+        onCompositionStart={() => {}}
+        onCompositionEnd={() => {}}
         style={{
           outline: 'none',
           minHeight: '1.5em',

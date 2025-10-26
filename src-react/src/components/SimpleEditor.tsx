@@ -1,9 +1,10 @@
-import { useRef, useEffect, useState, forwardRef } from 'react';
+import { useRef, useEffect, forwardRef } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 
-const SimpleEditor = forwardRef<HTMLTextAreaElement>((props, ref) => {
+const SimpleEditor = forwardRef<HTMLTextAreaElement>((_props, ref) => {
   const { editor, ui, updateContent, setCursorPosition, setSelection, undo, redo } = useAppStore();
-  const textareaRef = ref || useRef<HTMLTextAreaElement>(null);
+  const internalRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = ref || internalRef;
 
   // 处理内容变化 - 原子性操作
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -13,9 +14,10 @@ const SimpleEditor = forwardRef<HTMLTextAreaElement>((props, ref) => {
 
   // 处理光标位置变化 - 一致性保证
   const handleSelectionChange = () => {
-    if (textareaRef.current) {
-      const start = textareaRef.current.selectionStart;
-      const end = textareaRef.current.selectionEnd;
+    const element = typeof textareaRef === 'function' ? null : textareaRef.current;
+    if (element) {
+      const start = element.selectionStart;
+      const end = element.selectionEnd;
       setCursorPosition(start);
       setSelection({
         start,
@@ -47,16 +49,18 @@ const SimpleEditor = forwardRef<HTMLTextAreaElement>((props, ref) => {
 
   // 自动调整高度 - 持久性保证
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    const element = typeof textareaRef === 'function' ? null : textareaRef.current;
+    if (element) {
+      element.style.height = 'auto';
+      element.style.height = element.scrollHeight + 'px';
     }
   }, [editor.content]);
 
   // 确保光标位置正确
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
+    const element = typeof textareaRef === 'function' ? null : textareaRef.current;
+    if (element) {
+      element.focus();
     }
   }, []);
 
@@ -123,8 +127,6 @@ FADE OUT."
       </div>
     </div>
   );
-};
-
 });
 
 SimpleEditor.displayName = 'SimpleEditor';

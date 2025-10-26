@@ -4,7 +4,7 @@ import { useFileOperations } from '@/hooks/useFileOperations';
 import FindReplace from './FindReplace';
 
 const Toolbar = () => {
-  const { ui, toggleSidebar, setPreviewMode, setEditorMode, toggleTheme } = useAppStore();
+  const { ui, toggleSidebar, setEditorMode, toggleTheme } = useAppStore();
   const { createNewFile, saveFile, needsSave } = useFileOperations();
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showFileMenu, setShowFileMenu] = useState(false);
