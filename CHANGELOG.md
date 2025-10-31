@@ -8,14 +8,16 @@
 ## [未发布]
 
 ### 新增 ✨
-- **富文本编辑器** - 实现Word/Notion风格的Fountain编辑器 ⭐
-  - 块级元素识别和渲染 (11种Fountain元素类型)
-  - 实时块级识别和样式应用
-  - 光标管理和键盘交互 (Enter/Backspace)
+- **真正的富文本编辑器** - 实现Word/Notion风格的Fountain编辑器 ⭐⭐⭐
+  - 使用overlay技术实现所见即所得的编辑体验
+  - 透明的contentEditable层覆盖在格式化预览层上
+  - 用户输入时实时看到格式化的内容（颜色、大小、缩进等）
+  - 光标颜色可见，文本透明，完全保持光标稳定性
+  - 支持11种Fountain元素类型的实时识别和格式化
   - 浅色/暗色主题支持
   - 与Zustand Store无缝集成
   - 自动保存支持
-  - 代码行数: 253行 (RichTextEditor) + 300行 (fountainBlockParser)
+  - 代码行数: 165行 (RichTextEditor) + 300行 (fountainBlockParser)
 
 - **块级解析工具** - fountainBlockParser工具库
   - `parseFountainBlock()` - 识别单个块的类型
