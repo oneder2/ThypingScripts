@@ -318,37 +318,46 @@
 }
 
 /* ========================================
-   新版直接编辑模式样式 (统一编辑区域)
+   富文本编辑器样式 (块级元素)
    ======================================== */
 
-/* 编辑器容器 */
-.fountain-editor {
+/* 块级元素基础样式 */
+.fountain-block {
   font-family: 'Courier New', monospace;
   line-height: 1.8;
   font-size: 14px;
-  min-height: 100%;
-  padding: 0;
-  margin: 0;
-}
-
-/* 每一行的基础样式 */
-.fountain-line {
   min-height: 1.8em;
   margin: 0;
-  padding: 2px 0;
-  transition: background-color 0.15s ease;
+  padding: 0.5em 0;
+  outline: none;
+  transition: background-color 0.15s ease, outline 0.15s ease;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
-.fountain-line:hover {
+.fountain-block:hover {
   background-color: rgba(0, 0, 0, 0.02);
 }
 
-.dark .fountain-line:hover {
+.dark .fountain-block:hover {
   background-color: rgba(255, 255, 255, 0.02);
 }
 
-/* 场景标题样式 */
-.fountain-scene-heading {
+.fountain-block:focus {
+  outline: 1px solid #3b82f6;
+  outline-offset: -1px;
+}
+
+.dark .fountain-block:focus {
+  outline: 1px solid #60a5fa;
+}
+
+/* ========================================
+   块级元素类型样式
+   ======================================== */
+
+/* 场景标题 */
+.fountain-block.fountain-scene {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -357,12 +366,12 @@
   color: #1f2937;
 }
 
-.dark .fountain-scene-heading {
+.dark .fountain-block.fountain-scene {
   color: #f3f4f6;
 }
 
-/* 角色名样式 */
-.fountain-character {
+/* 角色名 */
+.fountain-block.fountain-character {
   text-align: center;
   font-weight: bold;
   margin-top: 1em;
@@ -370,12 +379,12 @@
   color: #7c2d12;
 }
 
-.dark .fountain-character {
+.dark .fountain-block.fountain-character {
   color: #fca5a5;
 }
 
-/* 对话样式 */
-.fountain-dialogue {
+/* 对话 */
+.fountain-block.fountain-dialogue {
   text-align: left;
   margin: 0.25em 0;
   padding-left: 3em;
@@ -383,23 +392,23 @@
   color: #374151;
 }
 
-.dark .fountain-dialogue {
+.dark .fountain-block.fountain-dialogue {
   color: #d1d5db;
 }
 
-/* 动作样式 */
-.fountain-action {
+/* 动作 */
+.fountain-block.fountain-action {
   text-align: left;
   margin: 0.5em 0;
   color: #4b5563;
 }
 
-.dark .fountain-action {
+.dark .fountain-block.fountain-action {
   color: #9ca3af;
 }
 
-/* 括号台词样式 */
-.fountain-parenthetical {
+/* 括号台词 */
+.fountain-block.fountain-parenthetical {
   text-align: center;
   margin: 0.25em 0;
   padding-left: 4em;
@@ -408,39 +417,75 @@
   font-style: italic;
 }
 
-.dark .fountain-parenthetical {
+.dark .fountain-block.fountain-parenthetical {
   color: #9ca3af;
 }
 
-/* 过渡样式 */
-.fountain-transition {
+/* 过渡 */
+.fountain-block.fountain-transition {
   text-align: right;
   margin: 1em 0;
   font-weight: bold;
   color: #ef4444;
 }
 
-.dark .fountain-transition {
+.dark .fountain-block.fountain-transition {
   color: #f87171;
 }
 
-/* 标题页样式 */
-.fountain-title-page {
+/* 居中文本 */
+.fountain-block.fountain-centered {
   text-align: center;
-  margin: 0.5em 0;
+  margin: 1em 0;
   color: #6b7280;
 }
 
-.dark .fountain-title-page {
+.dark .fountain-block.fountain-centered {
   color: #9ca3af;
 }
 
-/* 普通文本样式 */
-.fountain-normal {
+/* 歌词 */
+.fountain-block.fountain-lyrics {
+  text-align: left;
+  font-style: italic;
   color: #6b7280;
 }
 
-.dark .fountain-normal {
+.dark .fountain-block.fountain-lyrics {
   color: #9ca3af;
+}
+
+/* 注释 */
+.fountain-block.fountain-note {
+  color: #999;
+  font-size: 0.9em;
+  background-color: rgba(255, 255, 0, 0.1);
+  padding: 0.5em;
+  border-left: 2px solid #fbbf24;
+}
+
+.dark .fountain-block.fountain-note {
+  background-color: rgba(255, 255, 0, 0.05);
+  border-left-color: #fcd34d;
+}
+
+/* 分页符 */
+.fountain-block.fountain-pagebreak {
+  text-align: center;
+  margin: 2em 0;
+  border-top: 1px solid #ccc;
+  color: #999;
+}
+
+.dark .fountain-block.fountain-pagebreak {
+  border-top-color: #666;
+  color: #999;
+}
+
+/* 空行 */
+.fountain-block.fountain-empty {
+  height: 0.5em;
+  margin: 0;
+  padding: 0;
 }
 

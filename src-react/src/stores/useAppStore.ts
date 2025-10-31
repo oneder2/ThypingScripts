@@ -8,7 +8,7 @@ interface AppStore {
   setUI: (ui: Partial<UIState>) => void;
   toggleSidebar: () => void;
   setPreviewMode: (mode: 'split' | 'editor' | 'preview') => void;
-  setEditorMode: (mode: 'fountain' | 'split') => void;
+  setEditorMode: (mode: 'fountain' | 'richtext' | 'split') => void;
   toggleTheme: () => void;
   
   // 文件状态
@@ -48,7 +48,7 @@ const initialUIState: UIState = {
   fontSize: 14,
   showLineNumbers: true,
   wordWrap: true,
-  editorMode: 'fountain', // 'fountain' | 'split'
+  editorMode: 'richtext', // 'fountain' | 'richtext' | 'split'
 };
 
 const initialFileState: FileState = {

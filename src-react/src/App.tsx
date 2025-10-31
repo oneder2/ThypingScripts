@@ -11,6 +11,7 @@ import NavigationPanel from '@/components/NavigationPanel';
 import SimpleEditor from '@/components/SimpleEditor';
 import SimpleFountainEditor from '@/components/SimpleFountainEditor';
 import DirectEditor from '@/components/DirectEditor';
+import RichTextEditor from '@/components/RichTextEditor';
 import PreviewPanel from '@/components/PreviewPanel';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -73,13 +74,20 @@ function App() {
           
           {/* 右侧编辑器区域 - 9/12 = 75% */}
           <div className={`${ui.sidebarOpen ? 'w-3/4' : 'w-full'} flex flex-col min-w-0`}>
-            {/* Fountain直接编辑模式 */}
+            {/* Fountain直接编辑模式 (纯文本) */}
             {ui.editorMode === 'fountain' && (
               <div className="w-full flex flex-col h-full">
                 <DirectEditor />
               </div>
             )}
-            
+
+            {/* Fountain富文本编辑模式 (Word/Notion风格) */}
+            {ui.editorMode === 'richtext' && (
+              <div className="w-full flex flex-col h-full">
+                <RichTextEditor />
+              </div>
+            )}
+
             {/* 分屏编辑模式 */}
             {ui.editorMode === 'split' && (
               <div className="w-full flex h-full">
@@ -87,7 +95,7 @@ function App() {
                 <div className="w-1/2 flex flex-col h-full border-r border-gray-200 dark:border-gray-700">
                   <SimpleEditor ref={editorRef} />
                 </div>
-                
+
                 {/* 预览面板 */}
                 <div className="w-1/2 flex flex-col h-full">
                   <PreviewPanel ref={previewRef} />

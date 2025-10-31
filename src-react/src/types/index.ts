@@ -100,3 +100,23 @@ export interface Shortcut {
   action: string;
   description: string;
 }
+
+// UI状态类型
+export interface UIState {
+  sidebarOpen: boolean;
+  previewMode: 'split' | 'editor' | 'preview';
+  theme: 'light' | 'dark';
+  fontSize: number;
+  showLineNumbers: boolean;
+  wordWrap: boolean;
+  editorMode: 'fountain' | 'richtext' | 'split';
+}
+
+// 文件状态类型
+export interface FileState {
+  currentFile: TempFile | null;
+  isModified: boolean;
+  isSaving: boolean;
+  lastSaved: string | null;
+  autoSaveEnabled: boolean;
+}
