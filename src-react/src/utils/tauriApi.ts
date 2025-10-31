@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { TempFile, RecoveryFile, AppError } from '@/types';
+import { TempFile, RecoveryFile, AppError, FountainDocument } from '@/types';
 
 // Tauri命令封装
 export class TauriAPI {
@@ -61,6 +61,23 @@ export class TauriAPI {
     }
   }
 
+  // Fountain解析功能
+  static async parseFountain(content: string): Promise<FountainDocument> {
+    try {
+      return await invoke('parse_fountain', { content });
+    } catch (error) {
+      throw this.handleError(error, 'Failed to parse Fountain content');
+    }
+  }
+
+  static async validateFountain(content: string): Promise<string[]> {
+    try {
+      return await invoke('validate_fountain', { content });
+    } catch (error) {
+      throw this.handleError(error, 'Failed to validate Fountain content');
+    }
+  }
+
   // 错误处理
   private static handleError(error: any, message: string): AppError {
     console.error('Tauri API Error:', error);
@@ -93,4 +110,8 @@ export const tauriApi = {
   checkCrashRecovery: TauriAPI.checkCrashRecovery,
   restoreFromRecovery: TauriAPI.restoreFromRecovery,
   cleanupOldFiles: TauriAPI.cleanupOldFiles,
+  
+  // Fountain解析功能
+  parseFountain: TauriAPI.parseFountain,
+  validateFountain: TauriAPI.validateFountain,
 };

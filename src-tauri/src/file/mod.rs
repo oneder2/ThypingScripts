@@ -168,4 +168,9 @@ impl FileManager {
     pub fn cleanup_old_files(&self) -> Result<usize, Box<dyn std::error::Error>> {
         Ok(self.temp_file_manager.cleanup_old_files()?)
     }
+
+    /// 获取自动保存服务（用于配置和未来扩展）
+    pub fn autosave_service(&self) -> &autosave::AutosaveService {
+        &self.autosave_service
+    }
 }

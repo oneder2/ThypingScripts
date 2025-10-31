@@ -311,9 +311,136 @@
     font-size: 12pt;
     line-height: 1.5;
   }
-  
+
   .script-preview .scene-heading {
     page-break-before: auto;
   }
+}
+
+/* ========================================
+   新版直接编辑模式样式 (统一编辑区域)
+   ======================================== */
+
+/* 编辑器容器 */
+.fountain-editor {
+  font-family: 'Courier New', monospace;
+  line-height: 1.8;
+  font-size: 14px;
+  min-height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+/* 每一行的基础样式 */
+.fountain-line {
+  min-height: 1.8em;
+  margin: 0;
+  padding: 2px 0;
+  transition: background-color 0.15s ease;
+}
+
+.fountain-line:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dark .fountain-line:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* 场景标题样式 */
+.fountain-scene-heading {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: #1f2937;
+}
+
+.dark .fountain-scene-heading {
+  color: #f3f4f6;
+}
+
+/* 角色名样式 */
+.fountain-character {
+  text-align: center;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.25em;
+  color: #7c2d12;
+}
+
+.dark .fountain-character {
+  color: #fca5a5;
+}
+
+/* 对话样式 */
+.fountain-dialogue {
+  text-align: left;
+  margin: 0.25em 0;
+  padding-left: 3em;
+  padding-right: 3em;
+  color: #374151;
+}
+
+.dark .fountain-dialogue {
+  color: #d1d5db;
+}
+
+/* 动作样式 */
+.fountain-action {
+  text-align: left;
+  margin: 0.5em 0;
+  color: #4b5563;
+}
+
+.dark .fountain-action {
+  color: #9ca3af;
+}
+
+/* 括号台词样式 */
+.fountain-parenthetical {
+  text-align: center;
+  margin: 0.25em 0;
+  padding-left: 4em;
+  padding-right: 4em;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.dark .fountain-parenthetical {
+  color: #9ca3af;
+}
+
+/* 过渡样式 */
+.fountain-transition {
+  text-align: right;
+  margin: 1em 0;
+  font-weight: bold;
+  color: #ef4444;
+}
+
+.dark .fountain-transition {
+  color: #f87171;
+}
+
+/* 标题页样式 */
+.fountain-title-page {
+  text-align: center;
+  margin: 0.5em 0;
+  color: #6b7280;
+}
+
+.dark .fountain-title-page {
+  color: #9ca3af;
+}
+
+/* 普通文本样式 */
+.fountain-normal {
+  color: #6b7280;
+}
+
+.dark .fountain-normal {
+  color: #9ca3af;
 }
 

@@ -41,3 +41,13 @@ pub enum CleanupPolicy {
 
 // 重新导出TempFileManager
 pub use file::{TempFileManager, FileManager};
+
+// 重新导出Fountain类型
+pub use fountain::{
+    FountainDocument,
+    FountainElement,
+    FountainElementType,
+    DocumentMetadata,
+    parse_fountain,
+    validate_fountain,
+};

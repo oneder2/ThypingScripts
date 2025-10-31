@@ -19,7 +19,7 @@ const SmartCompletion = ({ content, cursorPosition, onSelect, onClose, isVisible
   const [selectedIndex, setSelectedIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // 提取内容中的角色名和场景标题
+  // 生成建议
   useEffect(() => {
     if (!isVisible) return;
 

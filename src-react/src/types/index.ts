@@ -25,38 +25,38 @@ export interface RecoveryFile {
   created_at: string;
 }
 
-// UI状态类型
-export interface UIState {
-  sidebarOpen: boolean;
-  previewMode: 'split' | 'editor' | 'preview';
-  theme: 'light' | 'dark';
-  fontSize: number;
-  showLineNumbers: boolean;
-  wordWrap: boolean;
-  editorMode: 'fountain' | 'split';
+// Fountain相关类型
+export enum FountainElementType {
+  TitlePage = 'TitlePage',
+  SceneHeading = 'SceneHeading',
+  Action = 'Action',
+  Character = 'Character',
+  Dialogue = 'Dialogue',
+  Parenthetical = 'Parenthetical',
+  Transition = 'Transition',
+  Note = 'Note',
+  Centered = 'Centered',
+  PageBreak = 'PageBreak',
 }
 
-// 文件状态类型
-export interface FileState {
-  currentFile: TempFile | null;
-  isModified: boolean;
-  isSaving: boolean;
-  lastSaved: string | null;
-  autoSaveEnabled: boolean;
-}
-
-// Fountain解析类型
 export interface FountainElement {
-  type: 'scene' | 'character' | 'dialogue' | 'action' | 'transition' | 'parenthetical';
+  element_type: FountainElementType;
   content: string;
-  line: number;
+  line_number: number;
   position: number;
 }
 
-export interface Scene {
-  title: string;
-  line: number;
+export interface DocumentMetadata {
+  word_count: number;
+  character_count: number;
+  scene_count: number;
+  character_count_map: Record<string, number>;
+}
+
+export interface FountainDocument {
+  title_page: Record<string, string>;
   elements: FountainElement[];
+  metadata: DocumentMetadata;
 }
 
 // 编辑器状态类型
