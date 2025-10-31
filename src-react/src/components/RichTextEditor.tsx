@@ -1,249 +1,171 @@
 /**
- * RichTextEditor - 富文本编辑器组件
+ * RichTextEditor - 真正的富文本编辑器
  *
- * 提供Word/Notion风格的Fountain编辑体验
- * 
- * 核心特性：
- * - 实时块级元素识别和渲染
- * - Fountain语法高亮
- * - 行内格式支持 (B/I/U)
- * - 自动格式化
- * - 快捷键支持
- * - 流畅的编辑体验
- * 
- * 架构：
- * 用户输入 → 块级解析 → 样式应用 → 渲染显示
- *   ↓
- * 保存到Zustand store → 自动保存到临时文件
+ * 核心理念：
+ * - 单一contentEditable区域，实时格式化
+ * - 用户看到格式化的内容（颜色、大小、缩进等）
+ * - 底层保存纯Fountain文本
+ * - 所见即所得的编辑体验
  */
 
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
-import { parseTextToBlocks, getBlockStyle, getBlockClassName } from '@/utils/fountainBlockParser';
+import { parseFountainBlock } from '@/utils/fountainBlockParser';
 import '@/styles/fountain.css';
-
-interface BlockElement {
-  id: string;
-  type: string;
-  content: string;
-  ref?: React.RefObject<HTMLDivElement>;
-}
 
 const RichTextEditor = () => {
   const { editor, ui, updateContent } = useAppStore();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [blocks, setBlocks] = useState<BlockElement[]>([]);
-  const [cursorBlockId, setCursorBlockId] = useState<string>('');
+  const editorRef = useRef<HTMLDivElement>(null);
   const isUpdatingFromStoreRef = useRef(false);
+  const lastPlainTextRef = useRef<string>('');
 
   /**
-   * 解析文本为块并更新状态
+   * 获取块的样式类名
    */
-  const updateBlocks = useCallback((text: string) => {
-    const parsedBlocks = parseTextToBlocks(text);
-    const blockElements: BlockElement[] = parsedBlocks.map(block => ({
-      id: block.id,
-      type: block.type,
-      content: block.content,
-      ref: useRef<HTMLDivElement>(null),
-    }));
-    setBlocks(blockElements);
+  const getBlockClass = useCallback((type: string): string => {
+    const classMap: Record<string, string> = {
+      scene: 'fountain-scene',
+      character: 'fountain-character',
+      dialogue: 'fountain-dialogue',
+      action: 'fountain-action',
+      parenthetical: 'fountain-parenthetical',
+      transition: 'fountain-transition',
+      centered: 'fountain-centered',
+      lyrics: 'fountain-lyrics',
+      note: 'fountain-note',
+      pagebreak: 'fountain-pagebreak',
+      empty: 'fountain-empty',
+    };
+    return classMap[type] || 'fountain-action';
   }, []);
 
   /**
-   * 处理块级元素输入
+   * 将纯文本转换为格式化HTML
    */
-  const handleBlockInput = useCallback((blockId: string, newContent: string) => {
-    // 更新块内容
-    setBlocks(prevBlocks =>
-      prevBlocks.map(block =>
-        block.id === blockId ? { ...block, content: newContent } : block
-      )
-    );
+  const formatContent = useCallback((plainText: string): string => {
+    const lines = plainText.split('\n');
+    let previousType = '';
 
-    // 重新构建完整文本
-    const fullText = blocks
-      .map(block => (block.id === blockId ? newContent : block.content))
-      .join('\n');
+    const formattedLines = lines.map((line) => {
+      const block = parseFountainBlock(line, previousType as any);
+      previousType = block.type;
 
-    // 更新store
-    updateContent(fullText);
-  }, [blocks, updateContent]);
+      const className = getBlockClass(block.type);
+      const escapedContent = line
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      return `<div class="${className}">${escapedContent}</div>`;
+    }).join('');
+
+    return formattedLines;
+  }, [getBlockClass]);
 
   /**
-   * 处理块级元素焦点
+   * 处理输入事件
    */
-  const handleBlockFocus = useCallback((blockId: string) => {
-    setCursorBlockId(blockId);
+  const handleInput = useCallback(() => {
+    if (!editorRef.current || isUpdatingFromStoreRef.current) return;
+
+    // 获取纯文本内容
+    const plainText = editorRef.current.textContent || '';
+
+    // 如果内容没有变化，不处理
+    if (plainText === lastPlainTextRef.current) return;
+
+    lastPlainTextRef.current = plainText;
+
+    // 保存纯文本到store
+    updateContent(plainText);
+
+    // 获取当前光标位置
+    const selection = window.getSelection();
+    let cursorOffset = 0;
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      cursorOffset = range.startOffset;
+    }
+
+    // 重新格式化内容
+    const formatted = formatContent(plainText);
+    editorRef.current.innerHTML = formatted;
+
+    // 恢复光标位置
+    if (selection && editorRef.current.firstChild) {
+      try {
+        const range = document.createRange();
+        const textNode = editorRef.current.firstChild;
+        range.setStart(textNode, Math.min(cursorOffset, (textNode.textContent || '').length));
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } catch (e) {
+        // 光标恢复失败，忽略
+      }
+    }
+  }, [formatContent, updateContent]);
+
+  /**
+   * 处理粘贴事件 - 只粘贴纯文本
+   */
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    document.execCommand('insertText', false, text);
   }, []);
 
   /**
-   * 处理块级元素按键
-   */
-  const handleBlockKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>, blockId: string, blockIndex: number) => {
-      const currentBlock = blocks[blockIndex];
-      if (!currentBlock) return;
-
-      // Enter: 创建新块
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        const selection = window.getSelection();
-
-        if (selection && selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          const offset = range.startOffset;
-          const beforeText = currentBlock.content.substring(0, offset);
-          const afterText = currentBlock.content.substring(offset);
-
-          // 更新当前块
-          handleBlockInput(blockId, beforeText);
-
-          // 创建新块
-          const newBlockId = Math.random().toString(36).substr(2, 9);
-          const newBlock: BlockElement = {
-            id: newBlockId,
-            type: 'action',
-            content: afterText,
-            ref: useRef<HTMLDivElement>(null),
-          };
-
-          setBlocks(prevBlocks => {
-            const newBlocks = [...prevBlocks];
-            newBlocks.splice(blockIndex + 1, 0, newBlock);
-            return newBlocks;
-          });
-
-          // 聚焦新块
-          setTimeout(() => {
-            setCursorBlockId(newBlockId);
-          }, 0);
-        }
-      }
-
-      // Backspace: 合并块
-      if (e.key === 'Backspace' && blockIndex > 0) {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          if (range.startOffset === 0) {
-            e.preventDefault();
-            const prevBlock = blocks[blockIndex - 1];
-            const mergedContent = prevBlock.content + currentBlock.content;
-
-            // 更新前一个块
-            handleBlockInput(prevBlock.id, mergedContent);
-
-            // 删除当前块
-            setBlocks(prevBlocks =>
-              prevBlocks.filter((_, idx) => idx !== blockIndex)
-            );
-
-            // 聚焦前一个块
-            setCursorBlockId(prevBlock.id);
-          }
-        }
-      }
-
-      // Ctrl+S: 保存
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        // 保存由自动保存处理
-      }
-    },
-    [blocks, handleBlockInput]
-  );
-
-  /**
-   * 从store同步内容到编辑器
+   * 初始化编辑器内容
    */
   useEffect(() => {
-    if (isUpdatingFromStoreRef.current) return;
+    if (!editorRef.current) return;
 
-    const currentText = blocks.map(b => b.content).join('\n');
-    if (currentText !== editor.content) {
+    // 如果编辑器为空，初始化内容
+    if (!editorRef.current.textContent && editor.content) {
       isUpdatingFromStoreRef.current = true;
-      updateBlocks(editor.content);
+      lastPlainTextRef.current = editor.content;
+      const formatted = formatContent(editor.content);
+      editorRef.current.innerHTML = formatted;
       isUpdatingFromStoreRef.current = false;
     }
-  }, [editor.content, blocks, updateBlocks]);
-
-  /**
-   * 初始化编辑器
-   */
-  useEffect(() => {
-    if (blocks.length === 0 && editor.content) {
-      updateBlocks(editor.content);
-    }
-  }, []);
+  }, [formatContent, editor.content]);
 
   /**
    * 聚焦编辑器
    */
   useEffect(() => {
-    if (containerRef.current && blocks.length === 0) {
-      containerRef.current.focus();
+    if (editorRef.current && !editorRef.current.textContent) {
+      editorRef.current.focus();
     }
-  }, [blocks.length]);
-
-  const currentBlock = blocks[blocks.findIndex(b => b.id === cursorBlockId)];
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 h-full overflow-hidden">
-      {/* 工具栏 */}
-      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-gray-800">
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          富文本编辑模式 - Word/Notion风格的Fountain编辑体验
-        </div>
-      </div>
-
       {/* 编辑区域 */}
       <div
-        ref={containerRef}
-        className="flex-1 overflow-auto p-8"
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        onPaste={handlePaste}
+        className="flex-1 overflow-auto p-8 outline-none"
         style={{
           fontFamily: "'Courier New', monospace",
           fontSize: '14px',
+          lineHeight: '1.8',
           color: ui.theme === 'dark' ? '#e5e7eb' : '#1f2937',
+          whiteSpace: 'pre-wrap',
+          wordWrap: 'break-word',
         }}
-      >
-        {blocks.length === 0 ? (
-          <div
-            className="text-gray-400 dark:text-gray-600"
-            style={{ minHeight: '100%' }}
-          >
-            开始输入...
-          </div>
-        ) : (
-          blocks.map((block, index) => (
-            <div
-              key={block.id}
-              ref={block.ref}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={(e) => handleBlockInput(block.id, e.currentTarget.textContent || '')}
-              onFocus={() => handleBlockFocus(block.id)}
-              onKeyDown={(e) => handleBlockKeyDown(e, block.id, index)}
-              className={getBlockClassName(block.type as any)}
-              style={{
-                ...getBlockStyle(block.type as any),
-                outline: cursorBlockId === block.id ? '1px solid #3b82f6' : 'none',
-                outlineOffset: '-1px',
-              }}
-              spellCheck={false}
-            >
-              {block.content}
-            </div>
-          ))
-        )}
-      </div>
+        spellCheck={false}
+      />
 
       {/* 状态栏 */}
       <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400">
         <div className="flex justify-between">
-          <span>块数: {blocks.length}</span>
           <span>字数: {editor.content.length}</span>
-          <span>当前块: {currentBlock?.type || 'N/A'}</span>
+          <span>行数: {editor.content.split('\n').length}</span>
         </div>
       </div>
     </div>
