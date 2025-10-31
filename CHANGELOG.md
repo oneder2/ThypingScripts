@@ -8,6 +8,22 @@
 ## [未发布]
 
 ### 新增 ✨
+- **富文本编辑器** - 实现Word/Notion风格的Fountain编辑器 ⭐
+  - 块级元素识别和渲染 (11种Fountain元素类型)
+  - 实时块级识别和样式应用
+  - 光标管理和键盘交互 (Enter/Backspace)
+  - 浅色/暗色主题支持
+  - 与Zustand Store无缝集成
+  - 自动保存支持
+  - 代码行数: 253行 (RichTextEditor) + 300行 (fountainBlockParser)
+
+- **块级解析工具** - fountainBlockParser工具库
+  - `parseFountainBlock()` - 识别单个块的类型
+  - `parseTextToBlocks()` - 将文本分解为块
+  - `getBlockClassName()` - 获取块的CSS类名
+  - `getBlockStyle()` - 获取块的样式对象
+  - `parseInlineFormats()` - 识别行内格式
+
 - **Fountain解析模块** - 实现完整的Rust后端Fountain解析器
   - 支持场景标题、角色、对话、动作等所有Fountain元素
   - 支持强制元素标记 (`.` 场景, `@` 动作, `#` 角色)
@@ -52,6 +68,9 @@
 - 添加 `FEATURE_CHECK_REPORT.md` - 详细的功能检查报告
 - 添加 `FEATURE_FIX_PLAN.md` - 修复计划和实现指南
 - 添加 `FEATURE_CHECK_SUMMARY.md` - 快速参考总结
+- 添加 `RICH_TEXT_EDITOR_DESIGN.md` - 富文本编辑器设计文档
+- 添加 `RICH_TEXT_EDITOR_IMPLEMENTATION_REPORT.md` - 实现报告
+- 添加 `RICH_TEXT_EDITOR_TEST_PLAN.md` - 测试计划
 - 更新 `CHANGELOG.md` - 记录所有重要更改
 
 ### 技术债务 ⚠️
