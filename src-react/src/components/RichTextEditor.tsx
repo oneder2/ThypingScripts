@@ -40,13 +40,13 @@ const RichTextEditor = () => {
   }, []);
 
   /**
-   * 将纯文本转换为格式化HTML
+   * 生成格式化的HTML预览
    */
-  const formatContent = useCallback((plainText: string): string => {
+  const generateFormattedHTML = useCallback((plainText: string): string => {
     const lines = plainText.split('\n');
     let previousType = '';
 
-    const formattedLines = lines.map((line) => {
+    return lines.map((line) => {
       const block = parseFountainBlock(line, previousType as any);
       previousType = block.type;
 
@@ -58,8 +58,6 @@ const RichTextEditor = () => {
 
       return `<div class="${className}">${escapedContent}</div>`;
     }).join('');
-
-    return formattedLines;
   }, [getBlockClass]);
 
   /**
@@ -78,33 +76,7 @@ const RichTextEditor = () => {
 
     // 保存纯文本到store
     updateContent(plainText);
-
-    // 获取当前光标位置
-    const selection = window.getSelection();
-    let cursorOffset = 0;
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      cursorOffset = range.startOffset;
-    }
-
-    // 重新格式化内容
-    const formatted = formatContent(plainText);
-    editorRef.current.innerHTML = formatted;
-
-    // 恢复光标位置
-    if (selection && editorRef.current.firstChild) {
-      try {
-        const range = document.createRange();
-        const textNode = editorRef.current.firstChild;
-        range.setStart(textNode, Math.min(cursorOffset, (textNode.textContent || '').length));
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      } catch (e) {
-        // 光标恢复失败，忽略
-      }
-    }
-  }, [formatContent, updateContent]);
+  }, [updateContent]);
 
   /**
    * 处理粘贴事件 - 只粘贴纯文本
@@ -125,11 +97,10 @@ const RichTextEditor = () => {
     if (!editorRef.current.textContent && editor.content) {
       isUpdatingFromStoreRef.current = true;
       lastPlainTextRef.current = editor.content;
-      const formatted = formatContent(editor.content);
-      editorRef.current.innerHTML = formatted;
+      editorRef.current.textContent = editor.content;
       isUpdatingFromStoreRef.current = false;
     }
-  }, [formatContent, editor.content]);
+  }, [editor.content]);
 
   /**
    * 聚焦编辑器
@@ -141,28 +112,45 @@ const RichTextEditor = () => {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 h-full overflow-hidden">
-      {/* 编辑区域 */}
+    <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 h-full overflow-hidden relative">
+      {/* 格式化预览层 */}
+      <div
+        className="absolute inset-0 p-8 overflow-auto pointer-events-none"
+        style={{
+          fontFamily: "'Courier New', monospace",
+          fontSize: '14px',
+          lineHeight: '1.8',
+          whiteSpace: 'pre-wrap',
+          wordWrap: 'break-word',
+        }}
+        dangerouslySetInnerHTML={{
+          __html: generateFormattedHTML(editor.content),
+        }}
+      />
+
+      {/* 编辑区域 - 透明，覆盖在预览层上 */}
       <div
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
         onPaste={handlePaste}
-        className="flex-1 overflow-auto p-8 outline-none"
+        className="flex-1 overflow-auto p-8 outline-none relative z-10"
         style={{
           fontFamily: "'Courier New', monospace",
           fontSize: '14px',
           lineHeight: '1.8',
-          color: ui.theme === 'dark' ? '#e5e7eb' : '#1f2937',
+          color: 'transparent',
+          caretColor: ui.theme === 'dark' ? '#e5e7eb' : '#1f2937',
           whiteSpace: 'pre-wrap',
           wordWrap: 'break-word',
+          backgroundColor: 'transparent',
         }}
         spellCheck={false}
       />
 
       {/* 状态栏 */}
-      <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400">
+      <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400 relative z-20">
         <div className="flex justify-between">
           <span>字数: {editor.content.length}</span>
           <span>行数: {editor.content.split('\n').length}</span>
