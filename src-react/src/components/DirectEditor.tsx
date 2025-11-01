@@ -33,7 +33,7 @@ interface FountainBlock {
 }
 
 const DirectEditor = () => {
-  const { editor, ui, updateContent, undo, redo, canUndo, canRedo, saveToHistory } = useAppStore();
+  const { editor, ui, updateContent, undo, redo, canUndo, canRedo, saveToHistory, setCursorPosition } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
   const historyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContentRef = useRef<string>('');
