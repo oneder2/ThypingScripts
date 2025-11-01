@@ -155,6 +155,15 @@ const RichTextEditor = () => {
   }, [editor.content, generateFormattedHTML]);
 
   /**
+   * 监听editor.content变化，更新预览层
+   */
+  useEffect(() => {
+    if (previewRef.current && editor.content) {
+      previewRef.current.innerHTML = generateFormattedHTML(editor.content);
+    }
+  }, [editor.content, generateFormattedHTML]);
+
+  /**
    * 聚焦编辑器
    */
   useEffect(() => {
