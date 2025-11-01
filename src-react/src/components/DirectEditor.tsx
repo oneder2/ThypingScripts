@@ -1,20 +1,21 @@
 /**
  * DirectEditor - Fountain富文本编辑模式组件
  *
- * 提供类似Word/Notion的块级编辑体验
+ * 提供类似Word/Notion的富文本编辑体验
  *
  * 核心特性：
- * - 块级编辑，每个Fountain元素是一个独立的块
- * - 工具栏按钮快速插入Fountain元素
+ * - 单一contentEditable容器，统一的文档模型
+ * - 工具栏按钮快速插入/转换Fountain元素
  * - 实时格式化显示（颜色、粗体、缩进等）
- * - 完整的撤销/重做功能（Zustand管理）
- * - 完整的光标位置管理
+ * - 完整的撤销/重做功能（自动历史记录）
+ * - 完整的光标位置管理（基于字符偏移）
  * - 中文输入法支持
  *
  * 技术实现：
- * - 每个块是一个contentEditable的div
- * - 使用CSS类来应用格式化样式
- * - Zustand管理块数组和历史记录
+ * - 单一contentEditable div容器
+ * - 块通过HTML结构表示（div with data-type）
+ * - 光标位置基于字符偏移量
+ * - 自动防抖历史记录
  * - 底层保存纯Fountain文本
  */
 
@@ -23,152 +24,120 @@ import { useAppStore } from '@/stores/useAppStore';
 import '@/styles/fountain.css';
 
 // Fountain块类型
-type BlockType = 'scene' | 'character' | 'dialogue' | 'action' | 'parenthetical' | 'transition';
+type BlockType = 'scene' | 'character' | 'dialogue' | 'action' | 'parenthetical' | 'transition' | 'centered' | 'note';
 
 // Fountain块接口
 interface FountainBlock {
-  id: string;
   type: BlockType;
   content: string;
 }
 
 const DirectEditor = () => {
   const { editor, ui, updateContent, undo, redo, canUndo, canRedo, saveToHistory } = useAppStore();
-  const [blocks, setBlocks] = useState<FountainBlock[]>([]);
-  const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const historyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedContentRef = useRef<string>('');
 
   /**
-   * 将blocks转换为纯文本
+   * 识别块类型
+   */
+  const identifyBlockType = useCallback((line: string, previousType?: BlockType): BlockType => {
+    const trimmed = line.trim();
+
+    // 空行
+    if (!trimmed) return 'action';
+
+    // 场景标题
+    if (/^(INT\.|EXT\.|EST\.)/i.test(trimmed)) return 'scene';
+
+    // 强制场景标题
+    if (/^\./.test(trimmed)) return 'scene';
+
+    // 括号台词
+    if (/^\(.*\)$/.test(trimmed)) return 'parenthetical';
+
+    // 过渡
+    if (/^(FADE|CUT|DISSOLVE|MATCH|WIPE|PUSH|PULL|PAN|TILT|ZOOM|IRIS|TRUCK|DOLLY|BOOM|CRANE|REVEAL|OPEN|CLOSE|SPLIT|CROSS|FLIP|FLOP|SPIN|SWISH|WHOOSH|WHIP|FLASH|FLASH TO|SMASH CUT|J-CUT|L-CUT|MONTAGE|END MONTAGE|INTERCUT|BACK TO|BACK TO SCENE|BACK TO:|BACK TO PRESENT|BACK TO PAST|BACK TO REALITY|BACK TO DREAM|BACK TO FLASHBACK|BACK TO FLASHFORWARD|BACK TO PRESENT DAY|BACK TO PRESENT TIME|BACK TO PRESENT MOMENT|BACK TO PRESENT SCENE|BACK TO PRESENT LOCATION|BACK TO PRESENT SETTING|BACK TO PRESENT PLACE|BACK TO PRESENT AREA|BACK TO PRESENT ZONE|BACK TO PRESENT REGION|BACK TO PRESENT WORLD|BACK TO PRESENT UNIVERSE|BACK TO PRESENT DIMENSION|BACK TO PRESENT REALITY|BACK TO PRESENT TIMELINE|BACK TO PRESENT TIMEFRAME|BACK TO PRESENT PERIOD|BACK TO PRESENT ERA|BACK TO PRESENT AGE|BACK TO PRESENT EPOCH|BACK TO PRESENT GENERATION|BACK TO PRESENT CENTURY|BACK TO PRESENT MILLENNIUM|BACK TO PRESENT YEAR|BACK TO PRESENT MONTH|BACK TO PRESENT WEEK|BACK TO PRESENT DAY|BACK TO PRESENT HOUR|BACK TO PRESENT MINUTE|BACK TO PRESENT SECOND|BACK TO PRESENT INSTANT|BACK TO PRESENT MOMENT|BACK TO PRESENT TIME|BACK TO PRESENT PLACE|BACK TO PRESENT LOCATION|BACK TO PRESENT SETTING|BACK TO PRESENT SCENE|BACK TO PRESENT AREA|BACK TO PRESENT ZONE|BACK TO PRESENT REGION|BACK TO PRESENT WORLD|BACK TO PRESENT UNIVERSE|BACK TO PRESENT DIMENSION|BACK TO PRESENT REALITY|BACK TO PRESENT TIMELINE|BACK TO PRESENT TIMEFRAME|BACK TO PRESENT PERIOD|BACK TO PRESENT ERA|BACK TO PRESENT AGE|BACK TO PRESENT EPOCH|BACK TO PRESENT GENERATION|BACK TO PRESENT CENTURY|BACK TO PRESENT MILLENNIUM|BACK TO PRESENT YEAR|BACK TO PRESENT MONTH|BACK TO PRESENT WEEK|BACK TO PRESENT DAY|BACK TO PRESENT HOUR|BACK TO PRESENT MINUTE|BACK TO PRESENT SECOND|BACK TO PRESENT INSTANT|TO:|TO BLACK|TO WHITE|TO RED|TO BLUE|TO GREEN|TO YELLOW|TO ORANGE|TO PURPLE|TO PINK|TO BROWN|TO GRAY|TO GREY|TO BLACK|TO WHITE|TO CLEAR|TO TITLE|TO CREDITS|TO END|TO FADE|TO CUT|TO DISSOLVE|TO MATCH|TO WIPE|TO PUSH|TO PULL|TO PAN|TO TILT|TO ZOOM|TO IRIS|TO TRUCK|TO DOLLY|TO BOOM|TO CRANE|TO REVEAL|TO OPEN|TO CLOSE|TO SPLIT|TO CROSS|TO FLIP|TO FLOP|TO SPIN|TO SWISH|TO WHOOSH|TO WHIP|TO FLASH|TO SMASH|TO J-CUT|TO L-CUT|TO MONTAGE|TO END MONTAGE|TO INTERCUT|TO BACK|TO SCENE|TO LOCATION|TO SETTING|TO PLACE|TO AREA|TO ZONE|TO REGION|TO WORLD|TO UNIVERSE|TO DIMENSION|TO REALITY|TO TIMELINE|TO TIMEFRAME|TO PERIOD|TO ERA|TO AGE|TO EPOCH|TO GENERATION|TO CENTURY|TO MILLENNIUM|TO YEAR|TO MONTH|TO WEEK|TO DAY|TO HOUR|TO MINUTE|TO SECOND|TO INSTANT|TO MOMENT|TO TIME|TO PLACE|TO LOCATION|TO SETTING|TO SCENE|TO AREA|TO ZONE|TO REGION|TO WORLD|TO UNIVERSE|TO DIMENSION|TO REALITY|TO TIMELINE|TO TIMEFRAME|TO PERIOD|TO ERA|TO AGE|TO EPOCH|TO GENERATION|TO CENTURY|TO MILLENNIUM|TO YEAR|TO MONTH|TO WEEK|TO DAY|TO HOUR|TO MINUTE|TO SECOND|TO INSTANT|TO MOMENT|TO TIME)/i.test(trimmed)) return 'transition';
+
+    // 强制过渡
+    if (/^>/.test(trimmed)) return 'transition';
+
+    // 居中文本
+    if (/^>.*<$/.test(trimmed)) return 'centered';
+
+    // 注释
+    if (/^\[\[.*\]\]$/.test(trimmed)) return 'note';
+
+    // 全大写 - 可能是角色名或过渡
+    if (/^[A-Z\s\-']+$/.test(trimmed) && trimmed.length > 0 && previousType !== 'character') {
+      return 'character';
+    }
+
+    // 前一个是角色名 - 这是对话
+    if (previousType === 'character') return 'dialogue';
+
+    // 默认为动作
+    return 'action';
+  }, []);
+
+  /**
+   * 将纯文本转换为块数组
+   */
+  const textToBlocks = useCallback((text: string): FountainBlock[] => {
+    const lines = text.split('\n');
+    let previousType: BlockType | undefined;
+
+    return lines.map((line) => {
+      const type = identifyBlockType(line, previousType);
+      previousType = type;
+      return { type, content: line };
+    });
+  }, [identifyBlockType]);
+
+  /**
+   * 将块数组转换为纯文本
    */
   const blocksToText = useCallback((blocks: FountainBlock[]): string => {
     return blocks.map(block => block.content).join('\n');
   }, []);
 
   /**
-   * 将纯文本转换为blocks
+   * 自动保存历史记录（防抖）
    */
-  const textToBlocks = useCallback((text: string): FountainBlock[] => {
-    const lines = text.split('\n');
-    return lines.map((line, index) => {
-      let type: BlockType = 'action';
+  const scheduleHistorySave = useCallback((currentContent: string) => {
+    // 清除之前的定时器
+    if (historyTimeoutRef.current) {
+      clearTimeout(historyTimeoutRef.current);
+    }
 
-      // 简单的类型识别
-      if (line.match(/^(INT\.|EXT\.|EST\.)/i)) {
-        type = 'scene';
-      } else if (line.match(/^[A-Z\s]+$/) && line.trim().length > 0) {
-        type = 'character';
-      } else if (line.match(/^\(/)) {
-        type = 'parenthetical';
-      } else if (line.match(/^(FADE|CUT|DISSOLVE)/i)) {
-        type = 'transition';
+    // 设置新的定时器（500ms防抖）
+    historyTimeoutRef.current = setTimeout(() => {
+      if (currentContent !== lastSavedContentRef.current) {
+        saveToHistory(lastSavedContentRef.current);
+        lastSavedContentRef.current = currentContent;
       }
-
-      return {
-        id: `block-${Date.now()}-${index}`,
-        type,
-        content: line,
-      };
-    });
-  }, []);
+    }, 500);
+  }, [saveToHistory]);
 
   /**
-   * 保存blocks到store
+   * 处理编辑器输入
    */
-  const saveBlocks = useCallback((newBlocks: FountainBlock[]) => {
-    const text = blocksToText(newBlocks);
+  const handleInput = useCallback(() => {
+    if (!editorRef.current) return;
 
-    // 保存历史记录
-    if (editor.content !== text) {
-      saveToHistory(editor.content);
-      updateContent(text);
-    }
-
-    setBlocks(newBlocks);
-  }, [editor.content, blocksToText, saveToHistory, updateContent]);
+    const plainText = editorRef.current.innerText || '';
+    updateContent(plainText);
+    scheduleHistorySave(plainText);
+  }, [updateContent, scheduleHistorySave]);
 
   /**
-   * 插入新块
+   * 处理键盘事件
    */
-  const insertBlock = useCallback((type: BlockType, defaultContent: string) => {
-    const newBlock: FountainBlock = {
-      id: `block-${Date.now()}`,
-      type,
-      content: defaultContent,
-    };
-
-    const newBlocks = [...blocks, newBlock];
-    saveBlocks(newBlocks);
-    setFocusedBlockId(newBlock.id);
-  }, [blocks, saveBlocks]);
-
-  /**
-   * 更新块内容
-   */
-  const updateBlock = useCallback((id: string, content: string) => {
-    const newBlocks = blocks.map(block =>
-      block.id === id ? { ...block, content } : block
-    );
-    saveBlocks(newBlocks);
-  }, [blocks, saveBlocks]);
-
-  /**
-   * 删除块
-   */
-  const deleteBlock = useCallback((id: string) => {
-    if (blocks.length <= 1) return; // 至少保留一个块
-
-    const newBlocks = blocks.filter(block => block.id !== id);
-    saveBlocks(newBlocks);
-  }, [blocks, saveBlocks]);
-
-  /**
-   * 获取块的CSS类名
-   */
-  const getBlockClassName = useCallback((type: BlockType): string => {
-    const baseClass = 'outline-none px-2 py-1 rounded min-h-[2em]';
-    const typeClass = `fountain-${type}`;
-    return `${baseClass} ${typeClass}`;
-  }, []);
-
-  /**
-   * 处理块的键盘事件
-   */
-  const handleBlockKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>, blockId: string, blockIndex: number) => {
-    // Enter键 - 创建新的动作块
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      const newBlock: FountainBlock = {
-        id: `block-${Date.now()}`,
-        type: 'action',
-        content: '',
-      };
-      const newBlocks = [
-        ...blocks.slice(0, blockIndex + 1),
-        newBlock,
-        ...blocks.slice(blockIndex + 1),
-      ];
-      saveBlocks(newBlocks);
-      setFocusedBlockId(newBlock.id);
-      return;
-    }
-
-    // Backspace键 - 如果块为空，删除块
-    if (e.key === 'Backspace') {
-      const block = blocks[blockIndex];
-      if (block.content === '' && blocks.length > 1) {
-        e.preventDefault();
-        deleteBlock(blockId);
-        // 聚焦到上一个块
-        if (blockIndex > 0) {
-          setFocusedBlockId(blocks[blockIndex - 1].id);
-        }
-        return;
-      }
-    }
-
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     // Ctrl+Z - 撤销
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
       e.preventDefault();
+      saveToHistory(editor.content);
       undo();
       return;
     }
@@ -179,123 +148,214 @@ const DirectEditor = () => {
       ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')
     ) {
       e.preventDefault();
+      saveToHistory(editor.content);
       redo();
       return;
     }
-  }, [blocks, saveBlocks, deleteBlock, undo, redo]);
+  }, [editor.content, saveToHistory, undo, redo]);
 
   /**
-   * 初始化blocks
+   * 初始化编辑器内容
    */
   useEffect(() => {
-    if (editor.content && blocks.length === 0) {
-      const initialBlocks = textToBlocks(editor.content);
-      setBlocks(initialBlocks);
-    }
-  }, [editor.content, blocks.length, textToBlocks]);
-
-  /**
-   * 从store恢复blocks（撤销/重做时）
-   */
-  useEffect(() => {
-    const currentText = blocksToText(blocks);
-    if (editor.content !== currentText && editor.content) {
-      const restoredBlocks = textToBlocks(editor.content);
-      setBlocks(restoredBlocks);
+    if (editorRef.current && editor.content) {
+      const currentText = editorRef.current.innerText || '';
+      if (currentText !== editor.content) {
+        editorRef.current.innerText = editor.content;
+        lastSavedContentRef.current = editor.content;
+      }
     }
   }, [editor.content]);
 
   /**
-   * 聚焦到指定的块
+   * 清理定时器
    */
   useEffect(() => {
-    if (focusedBlockId) {
-      const element = document.getElementById(focusedBlockId);
-      if (element) {
-        element.focus();
-        // 将光标移到末尾
-        const range = document.createRange();
-        const sel = window.getSelection();
-        if (element.childNodes.length > 0) {
-          range.setStart(element.childNodes[0], element.textContent?.length || 0);
-        } else {
-          range.setStart(element, 0);
-        }
-        range.collapse(true);
-        sel?.removeAllRanges();
-        sel?.addRange(range);
+    return () => {
+      if (historyTimeoutRef.current) {
+        clearTimeout(historyTimeoutRef.current);
       }
+    };
+  }, []);
+
+  /**
+   * 获取块的CSS类名
+   */
+  const getBlockClassName = (type: BlockType): string => {
+    return `fountain-${type}`;
+  };
+
+  /**
+   * 渲染编辑器内容为HTML
+   */
+  const renderContent = useCallback(() => {
+    if (!editorRef.current) return;
+
+    const blocks = textToBlocks(editor.content);
+    const html = blocks.map(block => {
+      const className = getBlockClassName(block.type);
+      const escapedContent = block.content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      return `<div class="${className}">${escapedContent || '<br>'}</div>`;
+    }).join('');
+
+    // 保存光标位置
+    const selection = window.getSelection();
+    let cursorOffset = 0;
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(editorRef.current);
+      preCaretRange.setEnd(range.endContainer, range.endOffset);
+      cursorOffset = preCaretRange.toString().length;
     }
-  }, [focusedBlockId]);
+
+    // 更新内容
+    editorRef.current.innerHTML = html;
+
+    // 恢复光标位置
+    try {
+      const range = document.createRange();
+      let charCount = 0;
+      let found = false;
+
+      const traverse = (node: Node): boolean => {
+        if (found) return true;
+
+        if (node.nodeType === Node.TEXT_NODE) {
+          const nextCharCount = charCount + (node.textContent?.length || 0);
+          if (cursorOffset <= nextCharCount) {
+            range.setStart(node, cursorOffset - charCount);
+            found = true;
+            return true;
+          }
+          charCount = nextCharCount;
+        } else {
+          for (let i = 0; i < node.childNodes.length; i++) {
+            if (traverse(node.childNodes[i])) return true;
+          }
+        }
+        return false;
+      };
+
+      traverse(editorRef.current);
+      if (found) {
+        range.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+    } catch (e) {
+      console.warn('Failed to restore cursor position:', e);
+    }
+  }, [editor.content, textToBlocks]);
+
+  /**
+   * 当内容变化时重新渲染
+   */
+  useEffect(() => {
+    renderContent();
+  }, [editor.content, renderContent]);
 
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 h-full overflow-hidden">
       {/* 工具栏 */}
-      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-gray-800">
+      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3 bg-gray-50 dark:bg-gray-800 space-y-2">
         {/* 第一行：撤销/重做和统计 */}
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-3">
           <button
-            onClick={undo}
+            onClick={() => {
+              saveToHistory(editor.content);
+              undo();
+            }}
             disabled={!canUndo}
-            className="px-3 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="px-3 py-1.5 rounded bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium border border-gray-200 dark:border-gray-600 transition"
             title="撤销 (Ctrl+Z)"
           >
             ↶ 撤销
           </button>
           <button
-            onClick={redo}
+            onClick={() => {
+              saveToHistory(editor.content);
+              redo();
+            }}
             disabled={!canRedo}
-            className="px-3 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="px-3 py-1.5 rounded bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium border border-gray-200 dark:border-gray-600 transition"
             title="重做 (Ctrl+Y)"
           >
             ↷ 重做
           </button>
           <div className="flex-1" />
-          <span className="text-xs text-gray-600 dark:text-gray-400">
-            字数: {editor.content.length} | 块数: {blocks.length}
+          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+            字数: {editor.content.length} | 行数: {editor.content.split('\n').length}
           </span>
         </div>
 
         {/* 第二行：Fountain元素按钮 */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => insertBlock('scene', 'INT. ')}
-            className="px-3 py-1 rounded bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-sm"
+            onClick={() => {
+              const newContent = editor.content + '\n\nINT. ';
+              updateContent(newContent);
+              scheduleHistorySave(newContent);
+            }}
+            className="px-3 py-1.5 rounded bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-sm font-medium transition"
             title="插入场景标题"
           >
             场景
           </button>
           <button
-            onClick={() => insertBlock('character', '角色名')}
-            className="px-3 py-1 rounded bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-sm"
+            onClick={() => {
+              const newContent = editor.content + '\n\n角色名';
+              updateContent(newContent);
+              scheduleHistorySave(newContent);
+            }}
+            className="px-3 py-1.5 rounded bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-sm font-medium transition"
             title="插入角色名"
           >
             角色
           </button>
           <button
-            onClick={() => insertBlock('dialogue', '对话内容')}
-            className="px-3 py-1 rounded bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800 text-sm"
+            onClick={() => {
+              const newContent = editor.content + '\n\n对话内容';
+              updateContent(newContent);
+              scheduleHistorySave(newContent);
+            }}
+            className="px-3 py-1.5 rounded bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800 text-sm font-medium transition"
             title="插入对话"
           >
             对话
           </button>
           <button
-            onClick={() => insertBlock('action', '动作描述')}
-            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-sm"
+            onClick={() => {
+              const newContent = editor.content + '\n\n动作描述';
+              updateContent(newContent);
+              scheduleHistorySave(newContent);
+            }}
+            className="px-3 py-1.5 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition"
             title="插入动作"
           >
             动作
           </button>
           <button
-            onClick={() => insertBlock('parenthetical', '(台词)')}
-            className="px-3 py-1 rounded bg-purple-100 dark:bg-purple-900 hover:bg-purple-200 dark:hover:bg-purple-800 text-sm"
+            onClick={() => {
+              const newContent = editor.content + '\n\n(台词)';
+              updateContent(newContent);
+              scheduleHistorySave(newContent);
+            }}
+            className="px-3 py-1.5 rounded bg-purple-100 dark:bg-purple-900 hover:bg-purple-200 dark:hover:bg-purple-800 text-sm font-medium transition"
             title="插入括号台词"
           >
             台词
           </button>
           <button
-            onClick={() => insertBlock('transition', 'FADE OUT.')}
-            className="px-3 py-1 rounded bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 text-sm"
+            onClick={() => {
+              const newContent = editor.content + '\n\nFADE OUT.';
+              updateContent(newContent);
+              scheduleHistorySave(newContent);
+            }}
+            className="px-3 py-1.5 rounded bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 text-sm font-medium transition"
             title="插入过渡"
           >
             过渡
@@ -303,30 +363,24 @@ const DirectEditor = () => {
         </div>
       </div>
 
-      {/* 编辑区域 - 块级编辑 */}
-      <div className="flex-1 overflow-auto p-8">
+      {/* 编辑区域 - 单一contentEditable容器 */}
+      <div className="flex-1 overflow-auto p-8 bg-white dark:bg-gray-900">
         <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={handleInput}
+          onKeyDown={handleKeyDown}
+          className="outline-none prose dark:prose-invert max-w-none"
           style={{
             fontFamily: "'Courier New', monospace",
             fontSize: '14px',
             lineHeight: '1.8',
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
           }}
-        >
-          {blocks.map((block, index) => (
-            <div
-              key={block.id}
-              id={block.id}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={(e) => updateBlock(block.id, e.currentTarget.textContent || '')}
-              onKeyDown={(e) => handleBlockKeyDown(e, block.id, index)}
-              className={getBlockClassName(block.type)}
-              spellCheck={false}
-            >
-              {block.content}
-            </div>
-          ))}
-        </div>
+          spellCheck={false}
+        />
       </div>
     </div>
   );

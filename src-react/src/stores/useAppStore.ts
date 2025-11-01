@@ -149,17 +149,22 @@ export const useAppStore = create<AppStore>()(
         editor: { ...state.editor, selection } 
       })),
       saveToHistory: (content) => set((state) => {
+        // 只有当内容不同时才保存到历史
+        if (content === state.editor.content) {
+          return state;
+        }
+
         // ACID原则：原子性 - 历史记录更新要么全部成功，要么全部失败
         const newHistory = {
-          undo: [...state.editor.history.undo, state.editor.content],
+          undo: [...state.editor.history.undo, content],
           redo: []
         };
-        
+
         // 一致性检查：限制历史记录数量，防止内存溢出
         if (newHistory.undo.length > 50) {
           newHistory.undo = newHistory.undo.slice(-50);
         }
-        
+
         return {
           editor: {
             ...state.editor,
