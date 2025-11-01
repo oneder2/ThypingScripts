@@ -175,22 +175,28 @@ export const useAppStore = create<AppStore>()(
       undo: () => set((state) => {
         // ACID原则：隔离性 - 撤销操作是独立的
         if (state.editor.history.undo.length === 0) return state;
-        
+
         const previousContent = state.editor.history.undo[state.editor.history.undo.length - 1];
         const newUndo = state.editor.history.undo.slice(0, -1);
         const newRedo = [...state.editor.history.redo, state.editor.content];
-        
+
         // 一致性检查：确保内容长度合理
         if (previousContent.length > 1000000) { // 1MB限制
           console.warn('Content too large for undo operation');
           return state;
         }
-        
+
+        // 计算合理的光标位置：保持在内容末尾或当前位置
+        let newCursorPosition = state.editor.cursorPosition;
+        if (newCursorPosition > previousContent.length) {
+          newCursorPosition = previousContent.length;
+        }
+
         return {
           editor: {
             ...state.editor,
             content: previousContent,
-            cursorPosition: Math.min(state.editor.cursorPosition, previousContent.length),
+            cursorPosition: newCursorPosition,
             history: {
               undo: newUndo,
               redo: newRedo
@@ -213,11 +219,17 @@ export const useAppStore = create<AppStore>()(
           return state;
         }
 
+        // 计算合理的光标位置：保持在内容末尾或当前位置
+        let newCursorPosition = state.editor.cursorPosition;
+        if (newCursorPosition > nextContent.length) {
+          newCursorPosition = nextContent.length;
+        }
+
         return {
           editor: {
             ...state.editor,
             content: nextContent,
-            cursorPosition: Math.min(state.editor.cursorPosition, nextContent.length),
+            cursorPosition: newCursorPosition,
             history: {
               undo: newUndo,
               redo: newRedo

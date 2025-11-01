@@ -42,17 +42,45 @@ const SimpleEditor = forwardRef<HTMLTextAreaElement>((_props, ref) => {
       e.preventDefault();
       console.log('Save triggered');
     }
-    
+
     // Ctrl+Z 撤销
     if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
       e.preventDefault();
+      const element = typeof textareaRef === 'function' ? null : textareaRef.current;
+      if (element) {
+        // 保存当前光标位置到历史
+        const { saveToHistory } = useAppStore.getState();
+        saveToHistory(editor.content);
+      }
       undo();
+      // 在下一帧更新光标位置
+      setTimeout(() => {
+        const element = typeof textareaRef === 'function' ? null : textareaRef.current;
+        if (element) {
+          const newCursorPos = Math.min(editor.cursorPosition, editor.content.length);
+          element.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
     }
-    
+
     // Ctrl+Y 或 Ctrl+Shift+Z 重做
     if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
       e.preventDefault();
+      const element = typeof textareaRef === 'function' ? null : textareaRef.current;
+      if (element) {
+        // 保存当前光标位置到历史
+        const { saveToHistory } = useAppStore.getState();
+        saveToHistory(editor.content);
+      }
       redo();
+      // 在下一帧更新光标位置
+      setTimeout(() => {
+        const element = typeof textareaRef === 'function' ? null : textareaRef.current;
+        if (element) {
+          const newCursorPos = Math.min(editor.cursorPosition, editor.content.length);
+          element.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
     }
   };
 

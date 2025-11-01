@@ -4,7 +4,7 @@ import { useFileOperations } from '@/hooks/useFileOperations';
 import FindReplace from './FindReplace';
 
 const Toolbar = () => {
-  const { ui, toggleSidebar, setEditorMode, toggleTheme } = useAppStore();
+  const { ui, toggleSidebar, setEditorMode, toggleTheme, undo, redo, canUndo, canRedo, saveToHistory, editor } = useAppStore();
   const { createNewFile, saveFile, needsSave } = useFileOperations();
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showFileMenu, setShowFileMenu] = useState(false);
@@ -165,10 +165,26 @@ const Toolbar = () => {
             <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               编辑工具
             </div>
-            <button className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <button
+              onClick={() => {
+                saveToHistory(editor.content);
+                undo();
+                setShowEditMenu(false);
+              }}
+              disabled={!canUndo}
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
               撤销 (Ctrl+Z)
             </button>
-            <button className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <button
+              onClick={() => {
+                saveToHistory(editor.content);
+                redo();
+                setShowEditMenu(false);
+              }}
+              disabled={!canRedo}
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
               重做 (Ctrl+Y)
             </button>
             <div className="border-t border-gray-200 dark:border-gray-700"></div>

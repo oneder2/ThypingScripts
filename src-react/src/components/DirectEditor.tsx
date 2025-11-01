@@ -130,7 +130,18 @@ const DirectEditor = () => {
     const plainText = editorRef.current.innerText || '';
     updateContent(plainText);
     scheduleHistorySave(plainText);
-  }, [updateContent, scheduleHistorySave]);
+
+    // 保存光标位置
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(editorRef.current);
+      preCaretRange.setEnd(range.endContainer, range.endOffset);
+      const cursorOffset = preCaretRange.toString().length;
+      setCursorPosition(cursorOffset);
+    }
+  }, [updateContent, scheduleHistorySave, setCursorPosition]);
 
   /**
    * 处理键盘事件
@@ -203,15 +214,20 @@ const DirectEditor = () => {
       return `<div class="${className}">${escapedContent || '<br>'}</div>`;
     }).join('');
 
-    // 保存光标位置
+    // 保存光标位置 - 优先使用store中的cursorPosition，其次使用当前选中位置
     const selection = window.getSelection();
-    let cursorOffset = 0;
-    if (selection && selection.rangeCount > 0) {
+    let cursorOffset = editor.cursorPosition || 0;
+
+    // 如果store中没有保存光标位置，尝试从当前选中位置获取
+    if (editor.cursorPosition === 0 && selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       const preCaretRange = range.cloneRange();
       preCaretRange.selectNodeContents(editorRef.current);
       preCaretRange.setEnd(range.endContainer, range.endOffset);
-      cursorOffset = preCaretRange.toString().length;
+      const calculatedOffset = preCaretRange.toString().length;
+      if (calculatedOffset > 0) {
+        cursorOffset = calculatedOffset;
+      }
     }
 
     // 更新内容
@@ -251,7 +267,7 @@ const DirectEditor = () => {
     } catch (e) {
       console.warn('Failed to restore cursor position:', e);
     }
-  }, [editor.content, textToBlocks]);
+  }, [editor.content, editor.cursorPosition, textToBlocks]);
 
   /**
    * 当内容变化时重新渲染
