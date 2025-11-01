@@ -2,107 +2,122 @@
  * DirectEditor - Fountain富文本编辑模式组件
  *
  * 提供类似Word/Notion的富文本编辑体验
- * 使用overlay技术实现所见即所得
  *
  * 核心特性：
  * - 所见即所得的编辑体验
+ * - 工具栏按钮快速插入Fountain元素
  * - 实时格式化显示（颜色、粗体、缩进等）
- * - 完整的撤销/重做功能
- * - 编辑工具栏
+ * - 完整的撤销/重做功能（浏览器原生）
  * - 完整的光标位置管理
  * - 中文输入法支持
- * - 零光标跳转问题
  *
  * 技术实现：
- * - 透明的contentEditable编辑层
- * - 格式化的HTML预览层
- * - 两层完全同步
+ * - 使用contentEditable的designMode
+ * - 使用CSS类来应用格式化样式
+ * - 工具栏按钮插入特定的HTML结构
  * - 底层保存纯Fountain文本
  */
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
-import { parseFountainBlock } from '@/utils/fountainBlockParser';
 import '@/styles/fountain.css';
 
 const DirectEditor = () => {
-  const { editor, ui, updateContent, undo, redo, canUndo, canRedo } = useAppStore();
+  const { editor, ui, updateContent } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
-  const isUpdatingFromStoreRef = useRef(false);
-  const lastPlainTextRef = useRef<string>('');
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   /**
-   * 获取块的样式类名
+   * 插入场景标题
    */
-  const getBlockClass = useCallback((type: string): string => {
-    const classMap: Record<string, string> = {
-      scene: 'fountain-scene',
-      character: 'fountain-character',
-      dialogue: 'fountain-dialogue',
-      action: 'fountain-action',
-      parenthetical: 'fountain-parenthetical',
-      transition: 'fountain-transition',
-      centered: 'fountain-centered',
-      lyrics: 'fountain-lyrics',
-      note: 'fountain-note',
-      pagebreak: 'fountain-pagebreak',
-      empty: 'fountain-empty',
-    };
-    return classMap[type] || 'fountain-action';
+  const insertSceneHeading = useCallback(() => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand('insertHTML', false, '<div class="fountain-scene">INT. </div>');
   }, []);
 
   /**
-   * 生成格式化的HTML预览
+   * 插入角色名
    */
-  const generateFormattedHTML = useCallback((plainText: string): string => {
-    const lines = plainText.split('\n');
-    let previousType = '';
+  const insertCharacter = useCallback(() => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand('insertHTML', false, '<div class="fountain-character">角色名</div>');
+  }, []);
 
-    return lines.map((line) => {
-      const block = parseFountainBlock(line, previousType as any);
-      previousType = block.type;
+  /**
+   * 插入对话
+   */
+  const insertDialogue = useCallback(() => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand('insertHTML', false, '<div class="fountain-dialogue">对话内容</div>');
+  }, []);
 
-      const className = getBlockClass(block.type);
-      const escapedContent = line
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+  /**
+   * 插入动作
+   */
+  const insertAction = useCallback(() => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand('insertHTML', false, '<div class="fountain-action">动作描述</div>');
+  }, []);
 
-      return `<div class="${className}">${escapedContent || '&nbsp;'}</div>`;
-    }).join('');
-  }, [getBlockClass]);
+  /**
+   * 插入过渡
+   */
+  const insertTransition = useCallback(() => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand('insertHTML', false, '<div class="fountain-transition">FADE OUT.</div>');
+  }, []);
+
+  /**
+   * 插入括号台词
+   */
+  const insertParenthetical = useCallback(() => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand('insertHTML', false, '<div class="fountain-parenthetical">(台词)</div>');
+  }, []);
 
   /**
    * 处理输入事件
    */
   const handleInput = useCallback(() => {
-    if (!editorRef.current || isUpdatingFromStoreRef.current) return;
+    if (!editorRef.current) return;
 
-    // 获取纯文本内容
-    const plainText = editorRef.current.textContent || '';
+    // 获取HTML内容
+    const htmlContent = editorRef.current.innerHTML;
 
-    // 如果内容没有变化，不处理
-    if (plainText === lastPlainTextRef.current) return;
+    // 提取纯文本用于保存
+    const plainText = editorRef.current.innerText || '';
 
-    lastPlainTextRef.current = plainText;
-
-    // 保存纯文本到store
+    // 保存到store
     updateContent(plainText);
 
-    // 同步预览层
-    if (previewRef.current) {
-      previewRef.current.innerHTML = generateFormattedHTML(plainText);
-    }
-  }, [updateContent, generateFormattedHTML]);
+    // 更新撤销/重做状态
+    setCanUndo(document.queryCommandEnabled('undo'));
+    setCanRedo(document.queryCommandEnabled('redo'));
+  }, [updateContent]);
 
   /**
-   * 处理粘贴事件 - 只粘贴纯文本
+   * 撤销
    */
-  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
+  const handleUndo = useCallback(() => {
+    document.execCommand('undo');
+    setCanUndo(document.queryCommandEnabled('undo'));
+    setCanRedo(document.queryCommandEnabled('redo'));
+  }, []);
+
+  /**
+   * 重做
+   */
+  const handleRedo = useCallback(() => {
+    document.execCommand('redo');
+    setCanUndo(document.queryCommandEnabled('undo'));
+    setCanRedo(document.queryCommandEnabled('redo'));
   }, []);
 
   /**
@@ -112,9 +127,7 @@ const DirectEditor = () => {
     // Ctrl+Z 或 Cmd+Z - 撤销
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
       e.preventDefault();
-      if (canUndo) {
-        undo();
-      }
+      handleUndo();
       return;
     }
 
@@ -124,48 +137,44 @@ const DirectEditor = () => {
       ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')
     ) {
       e.preventDefault();
-      if (canRedo) {
-        redo();
-      }
+      handleRedo();
       return;
     }
-  }, [canUndo, canRedo, undo, redo]);
+  }, [handleUndo, handleRedo]);
 
   /**
    * 初始化编辑器内容
    */
   useEffect(() => {
-    if (!editorRef.current) return;
+    if (!editorRef.current || !editor.content) return;
 
-    // 如果编辑器为空，初始化内容
-    if (!editorRef.current.textContent && editor.content) {
-      isUpdatingFromStoreRef.current = true;
-      lastPlainTextRef.current = editor.content;
-      editorRef.current.textContent = editor.content;
-
-      // 同步预览层
-      if (previewRef.current) {
-        previewRef.current.innerHTML = generateFormattedHTML(editor.content);
+    // 将纯文本转换为格式化的HTML
+    const lines = editor.content.split('\n');
+    const html = lines.map(line => {
+      // 简单的格式识别
+      if (line.match(/^(INT\.|EXT\.|EST\.)/i)) {
+        return `<div class="fountain-scene">${line}</div>`;
+      } else if (line.match(/^[A-Z\s]+$/)) {
+        return `<div class="fountain-character">${line}</div>`;
+      } else if (line.match(/^\(/)) {
+        return `<div class="fountain-parenthetical">${line}</div>`;
+      } else if (line.match(/^(FADE|CUT|DISSOLVE)/i)) {
+        return `<div class="fountain-transition">${line}</div>`;
+      } else if (line.trim() === '') {
+        return '<div><br/></div>';
+      } else {
+        return `<div class="fountain-action">${line}</div>`;
       }
+    }).join('');
 
-      isUpdatingFromStoreRef.current = false;
-    }
-  }, [editor.content, generateFormattedHTML]);
-
-  /**
-   * 监听editor.content变化，更新预览层
-   */
-  useEffect(() => {
-    if (previewRef.current && editor.content) {
-      previewRef.current.innerHTML = generateFormattedHTML(editor.content);
-    }
-  }, [editor.content, generateFormattedHTML]);
+    editorRef.current.innerHTML = html;
+  }, [editor.content]);
 
   /**
    * 聚焦编辑器
    */
   useEffect(() => {
-    if (editorRef.current && !editorRef.current.textContent) {
+    if (editorRef.current) {
       editorRef.current.focus();
     }
   }, []);
@@ -173,62 +182,91 @@ const DirectEditor = () => {
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 h-full overflow-hidden">
       {/* 工具栏 */}
-      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-gray-800 flex items-center gap-2">
-        <button
-          onClick={() => canUndo && undo()}
-          disabled={!canUndo}
-          className="px-3 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          title="撤销 (Ctrl+Z)"
-        >
-          ↶ 撤销
-        </button>
-        <button
-          onClick={() => canRedo && redo()}
-          disabled={!canRedo}
-          className="px-3 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          title="重做 (Ctrl+Y)"
-        >
-          ↷ 重做
-        </button>
-        <div className="flex-1" />
-        <span className="text-xs text-gray-600 dark:text-gray-400">
-          字数: {editor.content.length} | 行数: {editor.content.split('\n').length}
-        </span>
+      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-gray-800">
+        {/* 第一行：撤销/重做和统计 */}
+        <div className="flex items-center gap-2 mb-2">
+          <button
+            onClick={handleUndo}
+            disabled={!canUndo}
+            className="px-3 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            title="撤销 (Ctrl+Z)"
+          >
+            ↶ 撤销
+          </button>
+          <button
+            onClick={handleRedo}
+            disabled={!canRedo}
+            className="px-3 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            title="重做 (Ctrl+Y)"
+          >
+            ↷ 重做
+          </button>
+          <div className="flex-1" />
+          <span className="text-xs text-gray-600 dark:text-gray-400">
+            字数: {editor.content.length} | 行数: {editor.content.split('\n').length}
+          </span>
+        </div>
+
+        {/* 第二行：Fountain元素按钮 */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={insertSceneHeading}
+            className="px-3 py-1 rounded bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-sm"
+            title="插入场景标题"
+          >
+            场景
+          </button>
+          <button
+            onClick={insertCharacter}
+            className="px-3 py-1 rounded bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-sm"
+            title="插入角色名"
+          >
+            角色
+          </button>
+          <button
+            onClick={insertDialogue}
+            className="px-3 py-1 rounded bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800 text-sm"
+            title="插入对话"
+          >
+            对话
+          </button>
+          <button
+            onClick={insertAction}
+            className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-sm"
+            title="插入动作"
+          >
+            动作
+          </button>
+          <button
+            onClick={insertParenthetical}
+            className="px-3 py-1 rounded bg-purple-100 dark:bg-purple-900 hover:bg-purple-200 dark:hover:bg-purple-800 text-sm"
+            title="插入括号台词"
+          >
+            台词
+          </button>
+          <button
+            onClick={insertTransition}
+            className="px-3 py-1 rounded bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 text-sm"
+            title="插入过渡"
+          >
+            过渡
+          </button>
+        </div>
       </div>
 
-      {/* 编辑区域容器 */}
-      <div className="flex-1 overflow-hidden relative">
-        {/* 格式化预览层 */}
-        <div
-          ref={previewRef}
-          className="absolute inset-0 p-8 overflow-auto pointer-events-none"
-          style={{
-            fontFamily: "'Courier New', monospace",
-            fontSize: '14px',
-            lineHeight: '1.8',
-            whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word',
-          }}
-        />
-
-        {/* 编辑区域 - 透明，覆盖在预览层上 */}
+      {/* 编辑区域 */}
+      <div className="flex-1 overflow-auto p-8">
         <div
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
           onInput={handleInput}
-          onPaste={handlePaste}
           onKeyDown={handleKeyDown}
-          className="absolute inset-0 p-8 overflow-auto outline-none"
+          className="min-h-full outline-none"
           style={{
             fontFamily: "'Courier New', monospace",
             fontSize: '14px',
             lineHeight: '1.8',
-            color: 'transparent',
-            caretColor: ui.theme === 'dark' ? '#e5e7eb' : '#1f2937',
-            whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word',
-            backgroundColor: 'transparent',
           }}
           spellCheck={false}
         />
