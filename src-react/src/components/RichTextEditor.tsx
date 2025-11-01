@@ -14,8 +14,9 @@ import { parseFountainBlock } from '@/utils/fountainBlockParser';
 import '@/styles/fountain.css';
 
 const RichTextEditor = () => {
-  const { editor, ui, updateContent } = useAppStore();
+  const { editor, ui, updateContent, undo, redo, canUndo, canRedo } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const isUpdatingFromStoreRef = useRef(false);
   const lastPlainTextRef = useRef<string>('');
 
@@ -76,7 +77,12 @@ const RichTextEditor = () => {
 
     // 保存纯文本到store
     updateContent(plainText);
-  }, [updateContent]);
+
+    // 同步预览层
+    if (previewRef.current) {
+      previewRef.current.innerHTML = generateFormattedHTML(plainText);
+    }
+  }, [updateContent, generateFormattedHTML]);
 
   /**
    * 处理粘贴事件 - 只粘贴纯文本
@@ -86,6 +92,46 @@ const RichTextEditor = () => {
     const text = e.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, text);
   }, []);
+
+  /**
+   * 处理键盘快捷键
+   */
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Ctrl+Z 或 Cmd+Z - 撤销
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      if (canUndo) {
+        undo();
+      }
+      return;
+    }
+
+    // Ctrl+Y 或 Ctrl+Shift+Z 或 Cmd+Shift+Z - 重做
+    if (
+      ((e.ctrlKey || e.metaKey) && e.key === 'y') ||
+      ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')
+    ) {
+      e.preventDefault();
+      if (canRedo) {
+        redo();
+      }
+      return;
+    }
+
+    // Ctrl+B - 粗体 (暂不实现，但预留)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      e.preventDefault();
+      // TODO: 实现粗体
+      return;
+    }
+
+    // Ctrl+I - 斜体 (暂不实现，但预留)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+      e.preventDefault();
+      // TODO: 实现斜体
+      return;
+    }
+  }, [canUndo, canRedo, undo, redo]);
 
   /**
    * 初始化编辑器内容
@@ -98,9 +144,15 @@ const RichTextEditor = () => {
       isUpdatingFromStoreRef.current = true;
       lastPlainTextRef.current = editor.content;
       editorRef.current.textContent = editor.content;
+
+      // 同步预览层
+      if (previewRef.current) {
+        previewRef.current.innerHTML = generateFormattedHTML(editor.content);
+      }
+
       isUpdatingFromStoreRef.current = false;
     }
-  }, [editor.content]);
+  }, [editor.content, generateFormattedHTML]);
 
   /**
    * 聚焦编辑器
@@ -112,49 +164,68 @@ const RichTextEditor = () => {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 h-full overflow-hidden relative">
-      {/* 格式化预览层 */}
-      <div
-        className="absolute inset-0 p-8 overflow-auto pointer-events-none"
-        style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: '14px',
-          lineHeight: '1.8',
-          whiteSpace: 'pre-wrap',
-          wordWrap: 'break-word',
-        }}
-        dangerouslySetInnerHTML={{
-          __html: generateFormattedHTML(editor.content),
-        }}
-      />
+    <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 h-full overflow-hidden">
+      {/* 工具栏 */}
+      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-gray-800 flex items-center gap-2">
+        <button
+          onClick={() => canUndo && undo()}
+          disabled={!canUndo}
+          className="px-3 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          title="撤销 (Ctrl+Z)"
+        >
+          ↶ 撤销
+        </button>
+        <button
+          onClick={() => canRedo && redo()}
+          disabled={!canRedo}
+          className="px-3 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          title="重做 (Ctrl+Y)"
+        >
+          ↷ 重做
+        </button>
+        <div className="flex-1" />
+        <span className="text-xs text-gray-600 dark:text-gray-400">
+          字数: {editor.content.length} | 行数: {editor.content.split('\n').length}
+        </span>
+      </div>
 
-      {/* 编辑区域 - 透明，覆盖在预览层上 */}
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleInput}
-        onPaste={handlePaste}
-        className="flex-1 overflow-auto p-8 outline-none relative z-10"
-        style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: '14px',
-          lineHeight: '1.8',
-          color: 'transparent',
-          caretColor: ui.theme === 'dark' ? '#e5e7eb' : '#1f2937',
-          whiteSpace: 'pre-wrap',
-          wordWrap: 'break-word',
-          backgroundColor: 'transparent',
-        }}
-        spellCheck={false}
-      />
+      {/* 编辑区域容器 */}
+      <div className="flex-1 overflow-hidden relative">
+        {/* 格式化预览层 */}
+        <div
+          ref={previewRef}
+          className="absolute inset-0 p-8 overflow-auto pointer-events-none"
+          style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: '14px',
+            lineHeight: '1.8',
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
+          }}
+        />
 
-      {/* 状态栏 */}
-      <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400 relative z-20">
-        <div className="flex justify-between">
-          <span>字数: {editor.content.length}</span>
-          <span>行数: {editor.content.split('\n').length}</span>
-        </div>
+        {/* 编辑区域 - 透明，覆盖在预览层上 */}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={handleInput}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+          className="absolute inset-0 p-8 overflow-auto outline-none"
+          style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: '14px',
+            lineHeight: '1.8',
+            color: 'transparent',
+            caretColor: ui.theme === 'dark' ? '#e5e7eb' : '#1f2937',
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
+            backgroundColor: 'transparent',
+            resize: 'none',
+          }}
+          spellCheck={false}
+        />
       </div>
     </div>
   );

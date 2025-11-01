@@ -10,14 +10,14 @@ interface AppStore {
   setPreviewMode: (mode: 'split' | 'editor' | 'preview') => void;
   setEditorMode: (mode: 'fountain' | 'richtext' | 'split') => void;
   toggleTheme: () => void;
-  
+
   // 文件状态
   file: FileState;
   setFile: (file: Partial<FileState>) => void;
   setCurrentFile: (file: TempFile | null) => void;
   setModified: (modified: boolean) => void;
   setSaving: (saving: boolean) => void;
-  
+
   // 编辑器状态
   editor: EditorState;
   setEditor: (editor: Partial<EditorState>) => void;
@@ -26,17 +26,19 @@ interface AppStore {
   setSelection: (selection: { start: number; end: number } | null) => void;
   undo: () => void;
   redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
   saveToHistory: (content: string) => void;
-  
+
   // 错误状态
   error: AppError | null;
   setError: (error: AppError | null) => void;
   clearError: () => void;
-  
+
   // 恢复状态
   recoveryFiles: any[];
   setRecoveryFiles: (files: any[]) => void;
-  
+
   // 重置状态
   reset: () => void;
 }
@@ -195,17 +197,17 @@ export const useAppStore = create<AppStore>()(
       redo: () => set((state) => {
         // ACID原则：隔离性 - 重做操作是独立的
         if (state.editor.history.redo.length === 0) return state;
-        
+
         const nextContent = state.editor.history.redo[state.editor.history.redo.length - 1];
         const newRedo = state.editor.history.redo.slice(0, -1);
         const newUndo = [...state.editor.history.undo, state.editor.content];
-        
+
         // 一致性检查：确保内容长度合理
         if (nextContent.length > 1000000) { // 1MB限制
           console.warn('Content too large for redo operation');
           return state;
         }
-        
+
         return {
           editor: {
             ...state.editor,
@@ -219,6 +221,16 @@ export const useAppStore = create<AppStore>()(
           file: { ...state.file, isModified: true }
         };
       }),
+
+      // 计算属性：是否可以撤销
+      get canUndo() {
+        return this.editor.history.undo.length > 0;
+      },
+
+      // 计算属性：是否可以重做
+      get canRedo() {
+        return this.editor.history.redo.length > 0;
+      },
       
       // 错误状态
       error: null,
