@@ -7,6 +7,22 @@
 
 ## [未发布]
 
+### 修复 🐛
+- **撤销/重做后光标回到文档开头** - 完全修复
+  - 在handleInput中保存光标位置到store
+  - renderContent使用store中的cursorPosition恢复光标
+  - undo/redo时保持合理的光标位置
+
+- **工具栏撤销/重做按钮无法点击** - 完全修复
+  - 添加撤销/重做按钮的点击处理
+  - 显示按钮的启用/禁用状态
+  - 按钮根据canUndo/canRedo动态更新
+
+- **源码编辑页面Ctrl+Z/Y不工作** - 完全修复
+  - 撤销/重做后更新textarea内容
+  - 恢复光标位置到正确的位置
+  - 支持Ctrl+Z/Y和Ctrl+Shift+Z快捷键
+
 ### 新增 ✨
 - **完全重写的富文本编辑器** - 基于MIT开源编辑器调研 ⭐⭐⭐
   - 使用单一contentEditable容器替代多块元素
