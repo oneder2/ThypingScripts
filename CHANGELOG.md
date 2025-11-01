@@ -17,7 +17,20 @@
   - 浅色/暗色主题支持
   - 与Zustand Store无缝集成
   - 自动保存支持
-  - 代码行数: 165行 (RichTextEditor) + 300行 (fountainBlockParser)
+  - 代码行数: 243行 (RichTextEditor) + 300行 (fountainBlockParser)
+
+- **编辑工具栏** - 提供Word风格的编辑工具
+  - 撤销/重做按钮
+  - 实时字数和行数统计
+  - 按钮状态根据历史记录动态更新
+  - 响应式设计，适配浅色/暗色主题
+
+- **撤销/重做功能** - 完整的编辑历史管理
+  - Ctrl+Z撤销上一步操作
+  - Ctrl+Y或Ctrl+Shift+Z重做操作
+  - 历史记录限制为50条，防止内存溢出
+  - 新输入后自动清空重做历史
+  - 撤销/重做时保持光标位置合理
 
 - **块级解析工具** - fountainBlockParser工具库
   - `parseFountainBlock()` - 识别单个块的类型
