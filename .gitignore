@@ -149,6 +149,7 @@ src-react/dist/
 src-react/build/
 
 # Logs
+docs/logs/
 logs
 *.log
 
